@@ -7,9 +7,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "glsl.tab.h"
-
-#include "glsl_common.h"
+#include "glsl_parser.h"
 
 #include "lex.glsl.h"
 void glslerror(const char *s);
@@ -69,7 +67,7 @@ struct glsl_node *new_glsl_node(int code, ...)
 	va_start(vl, code);
 	for (i = 0; i < n; i++) {
 		temp = va_arg(vl, struct glsl_node *);
-		g->children[i] = (intptr_t)temp;
+		g->children[i] = temp;
 	}
 	va_end(vl);
 	return g;

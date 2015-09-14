@@ -8,9 +8,9 @@ lex.glsl.c: glsl.lex | glsl.tab.c
 glsl.tab.c: glsl.y 
 	bison glsl.y
 
-glsl.tab.o: lex.glsl.c glsl_common.h
+glsl.tab.o: lex.glsl.c glsl_parser.h
 
-lex.glsl.o: glsl_common.h
+lex.glsl.o: glsl_parser.h
 
 %.o: %.c
 	gcc -g -O0 -std=gnu99 -c -Wall $< -o $@
@@ -23,4 +23,4 @@ clean:
 	@-rm -f glsl.tab.h
 	@-rm -f lex.glsl.c
 	@-rm -f lex.glsl.h
-	@-rm *.o
+	@-rm -f *.o
