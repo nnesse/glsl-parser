@@ -328,7 +328,8 @@ const char *token_to_str[4096] = {
 	[ARRAY_SPECIFIER] = "ARRAY_SPECIFIER",
 	[ARRAY_SPECIFIER_LIST] = "ARRAY_SPECIFIER_LIST",
 	[STRUCT_DECLARATOR_LIST] = "STRUCT_DECLARATOR_LIST",
-	[FUNCTION_CALL_HEADER_WITH_PARAMETERS] = "FUNCTION_CALL_HEADER_WITH_PARAMETERS",
+	[STRUCT_DECLARATION_LIST] = "STRUCT_DECLARATION_LIST",
+	[FUNCTION_CALL_PARAMETER_LIST] = "FUNCTION_CALL_PARAMETER_LIST",
 	[NUM_TOKEN] = ""
 };
 
@@ -406,9 +407,7 @@ const char *token_to_str[4096] = {
 %type <struct glsl_node *> function_call
 %type <struct glsl_node *> function_call_or_method
 %type <struct glsl_node *> function_call_generic
-%type <struct glsl_node *> function_call_header_no_parameters
-%type <struct glsl_node *> function_call_header_with_parameters
-%type <struct glsl_node *> function_call_header
+%type <struct glsl_node *> function_call_parameter_list
 %type <struct glsl_node *> function_identifier
 
 %type <struct glsl_node *> type_specifier
@@ -708,7 +707,8 @@ const char *token_to_str[4096] = {
 %token ARRAY_SPECIFIER
 %token ARRAY_SPECIFIER_LIST
 %token STRUCT_DECLARATOR_LIST
-%token FUNCTION_CALL_HEADER_WITH_PARAMETERS
+%token FUNCTION_CALL_PARAMETER_LIST
+%token STRUCT_DECLARATION_LIST
 
 %token NUM_TOKEN
 %%
@@ -1057,7 +1057,7 @@ struct_specifier	: STRUCT struct_name LEFT_BRACE struct_declaration_list RIGHT_B
 			;
 
 struct_declaration_list : struct_declaration { $$ = $1; }
-			| struct_declaration_list struct_declaration { $$ = new_glsl_node(SEMICOLON, $1, $2, NULL); }
+			| struct_declaration_list struct_declaration { $$ = new_glsl_node(STRUCT_DECLARATION_LIST, $1, $2, NULL); }
 			;
 
 struct_declaration	: type_specifier struct_declarator_list SEMICOLON { $$ = new_glsl_node(STRUCT_DECLARATION, new_glsl_node(TYPE_QUALIFIER_LIST, NULL), $1, $2, NULL); }
@@ -1244,22 +1244,15 @@ function_call		: function_call_or_method { $$ = $1; }
 function_call_or_method	: function_call_generic { $$ = $1; }
 			;
 
-function_call_generic	: function_call_header_with_parameters RIGHT_PAREN { $$ = $1; }
-			| function_call_header_no_parameters RIGHT_PAREN { $$ = $1; }
+function_call_generic	: function_identifier LEFT_PAREN function_call_parameter_list RIGHT_PAREN { $$ = new_glsl_node(FUNCTION_CALL, $1, $3, NULL); }
+			| function_identifier LEFT_PAREN LEFT_PAREN { $$ = new_glsl_node(FUNCTION_CALL, $1, NULL); }
+			| function_identifier LEFT_PAREN VOID RIGHT_PAREN { $$ = new_glsl_node(FUNCTION_CALL, $1, NULL); }
 			;
 
-function_call_header_no_parameters: function_call_header VOID { $$ = new_glsl_node(FUNCTION_CALL, $1, NULL); }
-			| function_call_header { $$ = new_glsl_node(FUNCTION_CALL, $1, NULL); }
+function_call_parameter_list : assignment_expression { $$ = $1; }
+			| function_call_parameter_list COMMA assignment_expression { $$ = new_glsl_node(FUNCTION_CALL_PARAMETER_LIST, $1, $3, NULL); }
 			;
-
-function_call_header_with_parameters: function_call_header assignment_expression { $$ = new_glsl_node(FUNCTION_CALL, $1, $2, NULL); }
-			| function_call_header_with_parameters COMMA assignment_expression { $$ = new_glsl_node(FUNCTION_CALL_HEADER_WITH_PARAMETERS, $1, $3, NULL); }
-			;
-
-function_call_header	: function_identifier LEFT_PAREN { $$ = $1; }
-			;
-
-function_identifier	: type_specifier { $$ = new_glsl_node(TYPE_SPECIFIER, $1, NULL); }
+function_identifier	: type_specifier { $$ = $1; }
 			| postfix_expression { $$ = new_glsl_node(POSTFIX_EXPRESSION, $1, NULL); }
 			;
 
@@ -1275,66 +1268,93 @@ primary_expression	: variable_identifier { $$ = new_glsl_node(IDENTIFIER, NULL);
 %%
 
 
-void traverse_tree(struct glsl_node *n, int depth)
+void traverse_tree(struct glsl_node *n, int depth, int list_token)
 {
 	int i;
-	for (i = 0; i < depth; i++) {
-		printf("\t");
-	}
-	if (token_to_str[n->code])
-		printf("%s", token_to_str[n->code]);
-	switch(n->code) {
-	case DOT:
-	case IDENTIFIER:
-	case BLOCK_IDENTIFIER:
-	case STRUCT_SPECIFIER:
-	case FUNCTION_HEADER:
-	case UNINITIALIZED_DECLARATION:
-	case PARAMETER_DECLARATOR:
-	case TYPE_NAME_LIST:
-	case DECLARATION_TAG:
-	case DECL_IDENTIFIER:
-		if (n->data.str) {
+
+	int next_depth = depth;
+
+	if(n->code != list_token) {
+		for (i = 0; i < depth; i++) {
+			printf("\t");
+		}
+		next_depth++;
+
+		if (token_to_str[n->code])
+			printf("%s", token_to_str[n->code]);
+
+		switch(n->code) {
+		case DOT:
+		case IDENTIFIER:
+		case BLOCK_IDENTIFIER:
+		case STRUCT_SPECIFIER:
+		case FUNCTION_HEADER:
+		case UNINITIALIZED_DECLARATION:
+		case PARAMETER_DECLARATOR:
+		case TYPE_NAME_LIST:
+		case DECLARATION_TAG:
+		case DECL_IDENTIFIER:
+			if (n->data.str) {
+				if (token_to_str[n->code])
+					printf(": ");
+				printf("%s", n->data.str);
+			}
+			break;
+		case FLOATCONSTANT:
 			if (token_to_str[n->code])
 				printf(": ");
-			printf("%s", n->data.str);
+			printf("%f", n->data.f);
+			break;
+		case DOUBLECONSTANT:
+			if (token_to_str[n->code])
+				printf(": ");
+			printf("%f", n->data.d);
+			break;
+		case INTCONSTANT:
+			if (token_to_str[n->code])
+				printf(": ");
+			printf("%d", n->data.i);
+			break;
+		case UINTCONSTANT:
+			if (token_to_str[n->code])
+				printf(": ");
+			printf("%u", n->data.ui);
+			break;
+		case BOOLCONSTANT:
+			if (token_to_str[n->code])
+				printf(": ");
+			printf("%s", n->data.b ? "true" : "false");
+			break;
 		}
-		break;
-	case FLOATCONSTANT:
-		if (token_to_str[n->code])
-			printf(": ");
-		printf("%f", n->data.f);
-		break;
-	case DOUBLECONSTANT:
-		if (token_to_str[n->code])
-			printf(": ");
-		printf("%f", n->data.d);
-		break;
-	case INTCONSTANT:
-		if (token_to_str[n->code])
-			printf(": ");
-		printf("%d", n->data.i);
-		break;
-	case UINTCONSTANT:
-		if (token_to_str[n->code])
-			printf(": ");
-		printf("%u", n->data.ui);
-		break;
-	case BOOLCONSTANT:
-		if (token_to_str[n->code])
-			printf(": ");
-		printf("%s", n->data.b ? "true" : "false");
+		printf("\n");
+	}
+
+	int next_list_token = list_token;
+
+	switch(n->code) {
+	case TYPE_NAME_LIST:
+	case TYPE_QUALIFIER_LIST:
+	case STATEMENT_LIST:
+	case IDENTIFIER_LIST:
+	case INIT_DECLARATOR_LIST:
+	case INITIALIZER_LIST:
+	case FUNCTION_PARAMETER_LIST:
+	case ARRAY_SPECIFIER_LIST:
+	case STRUCT_DECLARATOR_LIST:
+	case STRUCT_DECLARATION_LIST:
+	case TRANSLATION_UNIT:
+	case FUNCTION_CALL_PARAMETER_LIST:
+		next_list_token = n->code;
 		break;
 	}
-	printf("\n");
 
 	for (i = 0; i < n->child_count; i++) {
-		traverse_tree((struct glsl_node *)n->children[i], depth + 1);
+		traverse_tree((struct glsl_node *)n->children[i], next_depth, next_list_token);
 	}
 }
 
 int main()
 {
 	glslparse();
-	traverse_tree(g_glsl_node_root, 0);
+	traverse_tree(g_glsl_node_root, 0, -1);
 }
