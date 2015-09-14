@@ -2,4 +2,5 @@ glsl.tab.c
 glsl.tab.h
 lex.glsl.c
 lex.glsl.h
+glsl_parse
 *.o

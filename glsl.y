@@ -19,7 +19,9 @@ int8_t *buffer = NULL;
 int8_t *buffer_end = NULL;
 int remaining = 0;
 
-static int8_t *myalloc(size_t size, int align)
+struct glsl_node *g_root;
+
+static int8_t *glsl_parse_alloc(size_t size, int align)
 {
 	int8_t *ret;
 
@@ -38,37 +40,36 @@ static int8_t *myalloc(size_t size, int align)
 	return ret;
 }
 
-static char *mystrdup(const char *c)
+static char *glsl_parse_strdup(const char *c)
 {
 	int len = strlen(c);
-	char *ret = (char *)myalloc(len + 1, 1);
+	char *ret = (char *)glsl_parse_alloc(len + 1, 1);
 	strcpy(ret, c);
 	return ret;
 }
 
-#define NEW_STRUCT(TYPE) ((struct TYPE *)myalloc(sizeof(struct TYPE), sizeof(intptr_t)))
-
-struct node *new_node(int code, ...)
+struct glsl_node *new_glsl_node(int code, ...)
 {
-	struct node *temp;
+	struct glsl_node *temp;
 	int i;
 	int n = 0;
 	va_list vl;
 	va_start(vl, code);
 	while (1) {
-		temp = va_arg(vl, struct node *);
+		temp = va_arg(vl, struct glsl_node *);
 		if (temp)
 			n++;
 		else
 			break;
 	}
 	va_end(vl);
-	struct node *g = (struct node *)myalloc(offsetof(struct node, children[n]), 8);
+	struct glsl_node *g = (struct glsl_node *)glsl_parse_alloc(offsetof(struct glsl_node, children[n]), 8);
 	g->code = code;
+	g->child_count = n;
 	va_start(vl, code);
 	for (i = 0; i < n; i++) {
-		temp = va_arg(vl, struct node *);
-		g->children[n] = (intptr_t)temp;
+		temp = va_arg(vl, struct glsl_node *);
+		g->children[i] = (intptr_t)temp;
 	}
 	va_end(vl);
 	return g;
@@ -278,7 +279,59 @@ const char *token_to_str[4096] = {
 	[MEDIUMP] = "mediump",
 	[LOWP] = "lowp",
 	[PRECISION] = "precision",
-	[AT] = "@"
+	[AT] = "@",
+	[TRANSLATION_UNIT] = "TRANSLATION_UNIT",
+	[POST_INC_OP] = "POST_INC_OP",
+	[POST_DEC_OP] = "POST_DEC_OP",
+	[ARRAY_REF_OP] = "ARRAY_REF_OP",
+	[FUNCTION_CALL] = "FUNCTION_CALL",
+	[TYPE_NAME_LIST] = "TYPE_NAME_LIST",
+	[TYPE_SPECIFIER] = "TYPE_SPECIFIER",
+	[POSTFIX_EXPRESSION] = "POSTFIX_EXPRESSION",
+	[TYPE_QUALIFIER_LIST] = "TYPE_QUALIFIER_LIST",
+	[STRUCT_DECLARATION] = "STRUCT_DECLARATION",
+	[STRUCT_DECLARATOR] = "STRUCT_DECLARATOR",
+	[STRUCT_SPECIFIER] = "STRUCT_SPECIFIER",
+	[FUNCTION_DEFINITION] = "FUNCTION_DEFINITION",
+	[DECLARATION] = "DECLARATION",
+	[STATEMENT_LIST] = "STATEMENT_LIST",
+	[TRANSLATION_UNIT] = "TRANSLATION_UNIT",
+	[DECLARATION_TAG] = "DECLARATION_TAG",
+	[DECLARATION_TAG_LIST] = "DECLARATION_TAG_LIST",
+	[END_DECLARATION] = "END_DECLARATION",
+	[PRECISION_DECLARATION] = "PRECISION_DECLARATION",
+	[BLOCK_DECLARATION] = "BLOCK_DECLARATION",
+	[BLOCK_IDENTIFIER] = "BLOCK_IDENTIFIER",
+	[TYPE_QUALIFIER_DECLARATION] = "TYPE_QUALIFIER_DECLARATION",
+	[IDENTIFIER_LIST] = "IDENTIFIER_LIST",
+	[DECL_IDENTIFIER] = "DECL_IDENTIFIER",
+	[INIT_DECLARATOR_LIST] = "INIT_DECLARATOR_LIST",
+	[FULLY_SPECIFIED_TYPE] = "FULLY_SPECIFIED_TYPE",
+	[SINGLE_DECLARATION] = "SINGLE_DECLARATION",
+	[INITIALIZER_LIST] = "INITIALIZER_LIST",
+	[EXPRESSION_STATEMENT] = "EXPRESSION_STATEMENT",
+	[SELECTION_STATEMENT] = "SELECTION_STATEMENT",
+	[SWITCH_STATEMENT] = "SWITCH_STATEMENT",
+	[FOR_REST_STATEMENT] = "FOR_REST_STATEMENT",
+	[WHILE_STATEMENT] = "WHILE_STATEMENT",
+	[DO_STATEMENT] = "DO_STATEMENT",
+	[FOR_STATEMENT] = "FOR_STATEMENT",
+	[CASE_LABEL] = "CASE_LABEL",
+	[CONDITION_OPT] = "CONDITION_OPT",
+	[ASSIGNMENT_CONDITION] = "ASSIGNMENT_CONDITION",
+	[EXPRESSION_CONDITION] = "EXPRESSION_CONDITION",
+	[FUNCTION_PROTOTYPE] = "FUNCTION_PROTOTYPE",
+	[FUNCTION_HEADER] = "FUNCTION_HEADER",
+	[FUNCTION_DECLARATION] = "FUNCTION_DECLARATION",
+	[FUNCTION_PARAMETER_LIST] = "FUNCTION_PARAMETER_LIST",
+	[PARAMETER_DECLARATION] = "PARAMETER_DECLARATION",
+	[PARAMETER_DECLARATOR] = "PARAMETER_DECLARATOR",
+	[UNINITIALIZED_DECLARATION] = "UNINITIALIZED_DECLARATION",
+	[ARRAY_SPECIFIER] = "ARRAY_SPECIFIER",
+	[ARRAY_SPECIFIER_LIST] = "ARRAY_SPECIFIER_LIST",
+	[STRUCT_DECLARATOR_LIST] = "STRUCT_DECLARATOR_LIST",
+	[FUNCTION_CALL_HEADER_WITH_PARAMETERS] = "FUNCTION_CALL_HEADER_WITH_PARAMETERS",
+	[NUM_TOKEN] = ""
 };
 
 %}
@@ -290,109 +343,109 @@ const char *token_to_str[4096] = {
 %define api.value.type union
 
 
-%type <struct node *> translation_unit 
+%type <struct glsl_node *> translation_unit
 
-%type <struct node *> external_declaration 
-%type <struct node *> function_definition
-%type <struct node *> compound_statement_no_new_scope
-%type <struct node *> statement
-%type <struct node *> statement_list
-%type <struct node *> compound_statement 
-%type <struct node *> simple_statement
-%type <struct node *> declaration_statement
-%type <struct node *> declaration_tag
-%type <struct node *> declaration_tag_list
-%type <struct node *> end_declaration 
-%type <struct node *> declaration 
-%type <struct node *> identifier_list
-%type <struct node *> init_declarator_list 
-%type <struct node *> single_declaration 
-%type <struct node *> initializer 
-%type <struct node *> initializer_list
+%type <struct glsl_node *> external_declaration
+%type <struct glsl_node *> function_definition
+%type <struct glsl_node *> compound_statement_no_new_scope
+%type <struct glsl_node *> statement
+%type <struct glsl_node *> statement_list
+%type <struct glsl_node *> compound_statement
+%type <struct glsl_node *> simple_statement
+%type <struct glsl_node *> declaration_statement
+%type <struct glsl_node *> declaration_tag
+%type <struct glsl_node *> declaration_tag_list
+%type <struct glsl_node *> end_declaration
+%type <struct glsl_node *> declaration
+%type <struct glsl_node *> identifier_list
+%type <struct glsl_node *> init_declarator_list
+%type <struct glsl_node *> single_declaration
+%type <struct glsl_node *> initializer
+%type <struct glsl_node *> initializer_list
 
-%type <struct node *> expression_statement
-%type <struct node *> selection_statement
-%type <struct node *> switch_statement
-%type <struct node *> switch_statement_list
-%type <struct node *> case_label
-%type <struct node *> iteration_statement
-%type <struct node *> statement_no_new_scope
-%type <struct node *> for_init_statement
-%type <struct node *> conditionopt
+%type <struct glsl_node *> expression_statement
+%type <struct glsl_node *> selection_statement
+%type <struct glsl_node *> switch_statement
+%type <struct glsl_node *> switch_statement_list
+%type <struct glsl_node *> case_label
+%type <struct glsl_node *> iteration_statement
+%type <struct glsl_node *> statement_no_new_scope
+%type <struct glsl_node *> for_init_statement
+%type <struct glsl_node *> conditionopt
 
-%type <struct node *> condition
-%type <struct node *> for_rest_statement 
-%type <struct node *> jump_statement 
-%type <struct node *> function_prototype 
-%type <struct node *> function_declarator
-%type <struct node *> parameter_declaration
-%type <struct node *> parameter_declarator
-%type <struct node *> function_header
-%type <struct node *> function_parameter_list
-%type <struct node *> fully_specified_type
-%type <struct node *> parameter_type_specifier
+%type <struct glsl_node *> condition
+%type <struct glsl_node *> for_rest_statement
+%type <struct glsl_node *> jump_statement
+%type <struct glsl_node *> function_prototype
+%type <struct glsl_node *> function_declarator
+%type <struct glsl_node *> parameter_declaration
+%type <struct glsl_node *> parameter_declarator
+%type <struct glsl_node *> function_header
+%type <struct glsl_node *> function_parameter_list
+%type <struct glsl_node *> fully_specified_type
+%type <struct glsl_node *> parameter_type_specifier
 
-%type <struct node *> primary_expression
-%type <struct node *> expression
-%type <struct node *> assignment_expression
-%type <struct node *> conditional_expression
-%type <struct node *> logical_or_expression 
-%type <struct node *> logical_xor_expression 
-%type <struct node *> logical_and_expression 
-%type <struct node *> exclusive_or_expression 
-%type <struct node *> constant_expression 
-%type <struct node *> and_expression 
-%type <struct node *> equality_expression 
-%type <struct node *> relational_expression 
-%type <struct node *> shift_expression 
-%type <struct node *> additive_expression 
-%type <struct node *> multiplicative_expression 
-%type <struct node *> unary_expression 
-%type <struct node *> postfix_expression 
-%type <struct node *> integer_expression 
-%type <struct node *> inclusive_or_expression 
+%type <struct glsl_node *> primary_expression
+%type <struct glsl_node *> expression
+%type <struct glsl_node *> assignment_expression
+%type <struct glsl_node *> conditional_expression
+%type <struct glsl_node *> logical_or_expression
+%type <struct glsl_node *> logical_xor_expression
+%type <struct glsl_node *> logical_and_expression
+%type <struct glsl_node *> exclusive_or_expression
+%type <struct glsl_node *> constant_expression
+%type <struct glsl_node *> and_expression
+%type <struct glsl_node *> equality_expression
+%type <struct glsl_node *> relational_expression
+%type <struct glsl_node *> shift_expression
+%type <struct glsl_node *> additive_expression
+%type <struct glsl_node *> multiplicative_expression
+%type <struct glsl_node *> unary_expression
+%type <struct glsl_node *> postfix_expression
+%type <struct glsl_node *> integer_expression
+%type <struct glsl_node *> inclusive_or_expression
 
-%type <struct node *> function_call
-%type <struct node *> function_call_or_method
-%type <struct node *> function_call_generic
-%type <struct node *> function_call_header_no_parameters
-%type <struct node *> function_call_header_with_parameters
-%type <struct node *> function_call_header
-%type <struct node *> function_identifier
+%type <struct glsl_node *> function_call
+%type <struct glsl_node *> function_call_or_method
+%type <struct glsl_node *> function_call_generic
+%type <struct glsl_node *> function_call_header_no_parameters
+%type <struct glsl_node *> function_call_header_with_parameters
+%type <struct glsl_node *> function_call_header
+%type <struct glsl_node *> function_identifier
 
-%type <struct node *> type_specifier
-%type <struct node *> type_specifier_nonarray
-%type <struct node *> struct_specifier
-%type <struct node *> array_specifier
-%type <struct node *> array_specifier_list
+%type <struct glsl_node *> type_specifier
+%type <struct glsl_node *> type_specifier_nonarray
+%type <struct glsl_node *> struct_specifier
+%type <struct glsl_node *> array_specifier
+%type <struct glsl_node *> array_specifier_list
 
-%type <struct node *> struct_declaration_list
-%type <struct node *> struct_declaration
-%type <struct node *> struct_declarator_list
-%type <struct node *> struct_declarator
-%type <struct node *> type_qualifier 
-%type <struct node *> single_type_qualifier 
-%type <struct node *> layout_qualifier 
-%type <struct node *> layout_qualifier_id_list 
-%type <struct node *> layout_qualifier_id
+%type <struct glsl_node *> struct_declaration_list
+%type <struct glsl_node *> struct_declaration
+%type <struct glsl_node *> struct_declarator_list
+%type <struct glsl_node *> struct_declarator
+%type <struct glsl_node *> type_qualifier
+%type <struct glsl_node *> single_type_qualifier
+%type <struct glsl_node *> layout_qualifier
+%type <struct glsl_node *> layout_qualifier_id_list
+%type <struct glsl_node *> layout_qualifier_id
 
-%type <struct node *> precision_qualifier
-%type <struct node *> invariant_qualifier
-%type <struct node *> precise_qualifier
-%type <struct node *> storage_qualifier
-%type <struct node *> interpolation_qualifier
-%type <struct node *> type_name_list 
+%type <struct glsl_node *> precision_qualifier
+%type <struct glsl_node *> invariant_qualifier
+%type <struct glsl_node *> precise_qualifier
+%type <struct glsl_node *> storage_qualifier
+%type <struct glsl_node *> interpolation_qualifier
+%type <struct glsl_node *> type_name_list
 
-%type <const char *> variable_identifier 
-%type <struct node*> decl_identifier 
-%type <struct node *> block_identifier 
-%type <const char *> struct_name 
-%type <const char *> type_name 
-%type <const char *> param_name 
-%type <const char *> function_name 
-%type <const char *> field_selection 
-%type <const char *> declaration_tag_identifier 
-%type <const char *> type_specifier_identifier 
+%type <const char *> variable_identifier
+%type <struct glsl_node *> decl_identifier
+%type <struct glsl_node *> block_identifier
+%type <const char *> struct_name
+%type <const char *> type_name
+%type <const char *> param_name
+%type <const char *> function_name
+%type <const char *> field_selection
+%type <const char *> declaration_tag_identifier
+%type <struct glsl_node *> type_specifier_identifier
 
 %type <int> assignment_operator
 %type <int> unary_operator
@@ -611,109 +664,102 @@ const char *token_to_str[4096] = {
 %token POST_INC_OP
 %token POST_DEC_OP
 %token ARRAY_REF_OP
-%token FUNCTION_CALL 
-
+%token FUNCTION_CALL
 %token TYPE_NAME_LIST
-%token TYPE_SPECIFIER 
-%token POSTFIX_EXPRESSION 
+%token TYPE_SPECIFIER
+%token POSTFIX_EXPRESSION
 %token TYPE_QUALIFIER_LIST
 %token STRUCT_DECLARATION
 %token STRUCT_DECLARATOR
 %token STRUCT_SPECIFIER
-
 %token FUNCTION_DEFINITION
-%token DECLARATION 
-%token STATEMENT_LIST 
+%token DECLARATION
+%token STATEMENT_LIST
 %token TRANSLATION_UNIT
-%token DECLARATION_TAG 
-%token DECLARATION_TAG_LIST 
+%token DECLARATION_TAG
+%token DECLARATION_TAG_LIST
 %token END_DECLARATION
-
-%token PRECISION_DECLARATION 
-%token BLOCK_DECLARATION 
+%token PRECISION_DECLARATION
+%token BLOCK_DECLARATION
 %token BLOCK_IDENTIFIER
-%token TYPE_QUALIFIER_DECLARATION 
-
+%token TYPE_QUALIFIER_DECLARATION
 %token IDENTIFIER_LIST
-%token DECL_IDENTIFIER 
-%token INIT_DECLARATOR_LIST 
-%token FULLY_SPECIFIED_TYPE 
-%token SINGLE_DECLARATION 
-%token INITIALIZER_LIST 
-
-%token EXPRESSION_STATEMENT 
-%token SELECTION_STATEMENT 
-%token SWITCH_STATEMENT 
-%token FOR_REST_STATEMENT 
+%token DECL_IDENTIFIER
+%token INIT_DECLARATOR_LIST
+%token FULLY_SPECIFIED_TYPE
+%token SINGLE_DECLARATION
+%token INITIALIZER_LIST
+%token EXPRESSION_STATEMENT
+%token SELECTION_STATEMENT
+%token SWITCH_STATEMENT
+%token FOR_REST_STATEMENT
 %token WHILE_STATEMENT
 %token DO_STATEMENT
 %token FOR_STATEMENT
-
-%token CASE_LABEL 
-%token CONDITION_OPT 
-
+%token CASE_LABEL
+%token CONDITION_OPT
 %token ASSIGNMENT_CONDITION
 %token EXPRESSION_CONDITION
-
-
 %token FUNCTION_PROTOTYPE
 %token FUNCTION_HEADER
 %token FUNCTION_DECLARATION
 %token FUNCTION_PARAMETER_LIST
-
-%token PARAMETER_DECLARATION 
-%token PARAMETER_DECLARATOR 
-
-%token UNINITIALIZED_DECLARATION 
-
+%token PARAMETER_DECLARATION
+%token PARAMETER_DECLARATOR
+%token UNINITIALIZED_DECLARATION
 %token ARRAY_SPECIFIER
-%token ARRAY_SPECIFIER_LIST 
+%token ARRAY_SPECIFIER_LIST
+%token STRUCT_DECLARATOR_LIST
+%token FUNCTION_CALL_HEADER_WITH_PARAMETERS
 
 %token NUM_TOKEN
 %%
 
+root			: translation_unit { g_root = $1; }
+
 translation_unit	: external_declaration { $$ = $1; }
-			| translation_unit external_declaration { $$ = new_node(TRANSLATION_UNIT, $1, $2, NULL); }
+			| translation_unit external_declaration { $$ = new_glsl_node(TRANSLATION_UNIT, $1, $2, NULL); }
 			;
 
-block_identifier	: IDENTIFIER { $$ = new_node(BLOCK_IDENTIFIER, NULL); $$->data.str = mystrdup($1); }
+block_identifier	: IDENTIFIER { $$ = new_glsl_node(BLOCK_IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
-decl_identifier		: IDENTIFIER { $$ = new_node(DECL_IDENTIFIER, NULL); $$->data.str = mystrdup($1); }
+decl_identifier		: IDENTIFIER { $$ = new_glsl_node(DECL_IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
-struct_name		: IDENTIFIER { $$ = mystrdup($1); }
+struct_name		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
 			;
 
-type_name		: IDENTIFIER { $$ = mystrdup($1); }
+type_name		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
 			;
 
-param_name		: IDENTIFIER { $$ = mystrdup($1); }
+param_name		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
 			;
 
-function_name		: IDENTIFIER { $$ = mystrdup($1); }
+function_name		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
 			;
 
-field_selection		: IDENTIFIER { $$ = mystrdup($1); }
+field_selection		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
 			;
 
-variable_identifier	: IDENTIFIER { $$ = mystrdup($1); }
-
-declaration_tag_identifier : IDENTIFIER { $$ = mystrdup($1); }
+variable_identifier	: IDENTIFIER { $$ = glsl_parse_strdup($1); }
 			;
 
-type_specifier_identifier : IDENTIFIER { $$ = mystrdup($1); }
+declaration_tag_identifier : IDENTIFIER { $$ = glsl_parse_strdup($1); }
+			;
+
+type_specifier_identifier : IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
 external_declaration	: function_definition { $$ = $1; }
 			| declaration { $$ = $1; }
 			;
 
-function_definition	: function_prototype compound_statement_no_new_scope { $$ = new_node(FUNCTION_DEFINITION, $1, NULL); }
-			| function_prototype { $$ = new_node(FUNCTION_DEFINITION,$1, NULL); }
+function_definition	: function_prototype compound_statement_no_new_scope { $$ = new_glsl_node(FUNCTION_DEFINITION, $1, $2, NULL); }
+			| function_prototype { $$ = new_glsl_node(FUNCTION_DEFINITION,$1, NULL); }
 			;
 
-compound_statement_no_new_scope : LEFT_BRACE RIGHT_BRACE { $$ = new_node(STATEMENT_LIST, NULL); }
+compound_statement_no_new_scope : LEFT_BRACE RIGHT_BRACE { $$ = new_glsl_node(STATEMENT_LIST, NULL); }
 			| LEFT_BRACE statement_list RIGHT_BRACE { $$ = $2; }
 			;
 
@@ -722,10 +768,10 @@ statement		: compound_statement { $$ = $1; }
 			;
 
 statement_list		: statement { $$ = $1; }
-			| statement_list statement { $$ = new_node(STATEMENT_LIST, $1, $2, NULL); }
+			| statement_list statement { $$ = new_glsl_node(STATEMENT_LIST, $1, $2, NULL); }
 			;
 
-compound_statement	: LEFT_BRACE RIGHT_BRACE { $$ = new_node(STATEMENT_LIST, NULL); }
+compound_statement	: LEFT_BRACE RIGHT_BRACE { $$ = new_glsl_node(STATEMENT_LIST, NULL); }
 			| LEFT_BRACE statement_list RIGHT_BRACE { $$ = $2; }
 			;
 
@@ -741,45 +787,45 @@ simple_statement	: declaration_statement { $$ = $1; }
 declaration_statement	: declaration { $$ = $1; }
 			;
 
-declaration_tag		: declaration_tag_identifier { $$ = new_node(DECLARATION_TAG, NULL); $$->data.str = $1; } 
-			| declaration_tag_identifier EQUAL primary_expression { $$ = new_node(DECLARATION_TAG, $3, NULL); $$->data.str = $1; }
+declaration_tag		: declaration_tag_identifier { $$ = new_glsl_node(DECLARATION_TAG, NULL); $$->data.str = glsl_parse_strdup($1); }
+			| declaration_tag_identifier EQUAL primary_expression { $$ = new_glsl_node(DECLARATION_TAG, $3, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
 declaration_tag_list	: declaration_tag { $$ = $1; }
-			| declaration_tag_list COMMA declaration_tag { $$ = new_node(DECLARATION_TAG_LIST, $1, $3, NULL); }
+			| declaration_tag_list COMMA declaration_tag { $$ = new_glsl_node(DECLARATION_TAG_LIST, $1, $3, NULL); }
 			;
 
-end_declaration		: AT declaration_tag_list AT SEMICOLON { $$ = new_node(END_DECLARATION, $2, NULL); }
-			| SEMICOLON { $$ = new_node(END_DECLARATION, NULL); }
+end_declaration		: AT declaration_tag_list AT SEMICOLON { $$ = new_glsl_node(END_DECLARATION, $2, NULL); }
+			| SEMICOLON { $$ = new_glsl_node(END_DECLARATION, NULL); }
 			;
 
 declaration		: function_prototype SEMICOLON { $$ = $1; }
 			| init_declarator_list end_declaration { $$ = $1; }
-			| PRECISION precision_qualifier type_specifier SEMICOLON { $$ = new_node(PRECISION_DECLARATION, $2, $3, NULL); }
-			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE SEMICOLON { $$ = new_node(BLOCK_DECLARATION, $1, $2, $4, NULL);}
-			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier SEMICOLON { $$ = new_node(BLOCK_DECLARATION, $1, $2, $4, $6, NULL);}
-			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier array_specifier_list SEMICOLON { $$ = new_node(BLOCK_DECLARATION, $1, $2, $4, $6, $7, NULL);}
-			| type_qualifier SEMICOLON { $$ = new_node(UNINITIALIZED_DECLARATION, $1, NULL); }
-			| type_qualifier type_name SEMICOLON { $$ = new_node(UNINITIALIZED_DECLARATION, $1, NULL); $$->data.str = $2; }
-			| type_qualifier type_name identifier_list SEMICOLON { $$ = new_node(UNINITIALIZED_DECLARATION, $1, $3, NULL); $$->data.str = $2; }
+			| PRECISION precision_qualifier type_specifier SEMICOLON { $$ = new_glsl_node(PRECISION_DECLARATION, $2, $3, NULL); }
+			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE SEMICOLON { $$ = new_glsl_node(BLOCK_DECLARATION, $1, $2, $4, NULL);}
+			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier SEMICOLON { $$ = new_glsl_node(BLOCK_DECLARATION, $1, $2, $4, $6, NULL);}
+			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier array_specifier_list SEMICOLON { $$ = new_glsl_node(BLOCK_DECLARATION, $1, $2, $4, $6, $7, NULL);}
+			| type_qualifier SEMICOLON { $$ = new_glsl_node(UNINITIALIZED_DECLARATION, $1, NULL); }
+			| type_qualifier type_name SEMICOLON { $$ = new_glsl_node(UNINITIALIZED_DECLARATION, $1, NULL); $$->data.str = glsl_parse_strdup($2); }
+			| type_qualifier type_name identifier_list SEMICOLON { $$ = new_glsl_node(UNINITIALIZED_DECLARATION, $1, $3, NULL); $$->data.str = glsl_parse_strdup($2); }
 			;
 
 identifier_list		: COMMA decl_identifier { $$ = $2; }
-			| identifier_list COMMA decl_identifier { $$ = new_node(IDENTIFIER_LIST, $1, $3, NULL); } 
+			| identifier_list COMMA decl_identifier { $$ = new_glsl_node(IDENTIFIER_LIST, $1, $3, NULL); }
 			;
 
 init_declarator_list	: single_declaration { $$ = $1; }
-			| init_declarator_list COMMA decl_identifier { $$ = new_node(INIT_DECLARATOR_LIST, $1, $3, NULL); }
-			| init_declarator_list COMMA decl_identifier array_specifier_list { $$ = new_node(INIT_DECLARATOR_LIST, $1, $3, $4, NULL); }
-			| init_declarator_list COMMA decl_identifier array_specifier_list EQUAL initializer { $$ = new_node(INIT_DECLARATOR_LIST, $1, $3, $4, $6, NULL); }
-			| init_declarator_list COMMA decl_identifier EQUAL initializer { $$ = new_node(INIT_DECLARATOR_LIST, $1, $3, new_node(ARRAY_SPECIFIER_LIST, NULL), $5, NULL); }
+			| init_declarator_list COMMA decl_identifier { $$ = new_glsl_node(INIT_DECLARATOR_LIST, $1, $3, NULL); }
+			| init_declarator_list COMMA decl_identifier array_specifier_list { $$ = new_glsl_node(INIT_DECLARATOR_LIST, $1, $3, $4, NULL); }
+			| init_declarator_list COMMA decl_identifier array_specifier_list EQUAL initializer { $$ = new_glsl_node(INIT_DECLARATOR_LIST, $1, $3, $4, $6, NULL); }
+			| init_declarator_list COMMA decl_identifier EQUAL initializer { $$ = new_glsl_node(INIT_DECLARATOR_LIST, $1, $3, new_glsl_node(ARRAY_SPECIFIER_LIST, NULL), $5, NULL); }
 			;
 
-single_declaration	: fully_specified_type { $$ = new_node(SINGLE_DECLARATION, $1, NULL); }
-			| fully_specified_type decl_identifier { $$ = new_node(SINGLE_DECLARATION, $1, $2, NULL); }
-			| fully_specified_type decl_identifier array_specifier_list { $$ = new_node(SINGLE_DECLARATION, $1, $2, $3, NULL); }
-			| fully_specified_type decl_identifier array_specifier_list EQUAL initializer { $$ = new_node(SINGLE_DECLARATION, $1, $2, $3, $5, NULL); }
-			| fully_specified_type decl_identifier EQUAL initializer { $$ = new_node(SINGLE_DECLARATION, $1, $2,  new_node(ARRAY_SPECIFIER_LIST, NULL), $4, NULL); }
+single_declaration	: fully_specified_type { $$ = new_glsl_node(SINGLE_DECLARATION, $1, NULL); }
+			| fully_specified_type decl_identifier { $$ = new_glsl_node(SINGLE_DECLARATION, $1, $2, NULL); }
+			| fully_specified_type decl_identifier array_specifier_list { $$ = new_glsl_node(SINGLE_DECLARATION, $1, $2, $3, NULL); }
+			| fully_specified_type decl_identifier array_specifier_list EQUAL initializer { $$ = new_glsl_node(SINGLE_DECLARATION, $1, $2, $3, $5, NULL); }
+			| fully_specified_type decl_identifier EQUAL initializer { $$ = new_glsl_node(SINGLE_DECLARATION, $1, $2,  new_glsl_node(ARRAY_SPECIFIER_LIST, NULL), $4, NULL); }
 			;
 
 initializer		: assignment_expression { $$ = $1; }
@@ -788,31 +834,31 @@ initializer		: assignment_expression { $$ = $1; }
 			;
 
 initializer_list	: initializer { $$ = $1; }
-			| initializer_list COMMA initializer { $$ = new_node(INITIALIZER_LIST, $1, $3, NULL); }
+			| initializer_list COMMA initializer { $$ = new_glsl_node(INITIALIZER_LIST, $1, $3, NULL); }
 			;
 
-expression_statement	: SEMICOLON { $$ = new_node(EXPRESSION_STATEMENT, NULL); }
-			| expression SEMICOLON { $$ = new_node(EXPRESSION_STATEMENT, $1, NULL); }
+expression_statement	: SEMICOLON { $$ = new_glsl_node(EXPRESSION_STATEMENT, NULL); }
+			| expression SEMICOLON { $$ = new_glsl_node(EXPRESSION_STATEMENT, $1, NULL); }
 			;
 
-selection_statement	: IF LEFT_PAREN expression RIGHT_PAREN statement { $$ = new_node(SELECTION_STATEMENT, $3, $5, NULL); }
-			| IF LEFT_PAREN expression RIGHT_PAREN statement ELSE statement { $$ = new_node(SELECTION_STATEMENT, $3, $5, $7, NULL); }
+selection_statement	: IF LEFT_PAREN expression RIGHT_PAREN statement { $$ = new_glsl_node(SELECTION_STATEMENT, $3, $5, NULL); }
+			| IF LEFT_PAREN expression RIGHT_PAREN statement ELSE statement { $$ = new_glsl_node(SELECTION_STATEMENT, $3, $5, $7, NULL); }
 			;
 
-switch_statement	: SWITCH LEFT_PAREN expression RIGHT_PAREN LEFT_BRACE switch_statement_list RIGHT_BRACE { $$ = new_node(SWITCH_STATEMENT, $3, $6, NULL); }
+switch_statement	: SWITCH LEFT_PAREN expression RIGHT_PAREN LEFT_BRACE switch_statement_list RIGHT_BRACE { $$ = new_glsl_node(SWITCH_STATEMENT, $3, $6, NULL); }
 			;
 
-switch_statement_list	: { $$ = new_node(STATEMENT_LIST, NULL); }
+switch_statement_list	: { $$ = new_glsl_node(STATEMENT_LIST, NULL); }
 			| statement_list { $$ = $1; }
 			;
 
-case_label		: CASE expression COLON { $$ = new_node(CASE_LABEL, $2, NULL); }
-			| DEFAULT COLON { $$ = new_node(CASE_LABEL, NULL); }
+case_label		: CASE expression COLON { $$ = new_glsl_node(CASE_LABEL, $2, NULL); }
+			| DEFAULT COLON { $$ = new_glsl_node(CASE_LABEL, NULL); }
 			;
 
-iteration_statement	: WHILE LEFT_PAREN condition RIGHT_PAREN statement_no_new_scope { $$ = new_node(WHILE_STATEMENT, $3, $5, NULL); }
-			| DO statement WHILE LEFT_PAREN expression RIGHT_PAREN SEMICOLON { $$ = new_node(DO_STATEMENT, $2, $5, NULL); }
-			| FOR LEFT_PAREN for_init_statement for_rest_statement RIGHT_PAREN statement_no_new_scope { $$ = new_node(FOR_STATEMENT, $3, $4, $6, NULL); }
+iteration_statement	: WHILE LEFT_PAREN condition RIGHT_PAREN statement_no_new_scope { $$ = new_glsl_node(WHILE_STATEMENT, $3, $5, NULL); }
+			| DO statement WHILE LEFT_PAREN expression RIGHT_PAREN SEMICOLON { $$ = new_glsl_node(DO_STATEMENT, $2, $5, NULL); }
+			| FOR LEFT_PAREN for_init_statement for_rest_statement RIGHT_PAREN statement_no_new_scope { $$ = new_glsl_node(FOR_STATEMENT, $3, $4, $6, NULL); }
 			;
 
 statement_no_new_scope	: compound_statement_no_new_scope { $$ = $1; }
@@ -823,213 +869,213 @@ for_init_statement	: expression_statement { $$ = $1; }
 			| declaration_statement { $$ = $1; }
 			;
 
-conditionopt		: condition { $$ = new_node(CONDITION_OPT, $1, NULL); }
-			| { $$ = new_node(CONDITION_OPT, NULL); }
+conditionopt		: condition { $$ = new_glsl_node(CONDITION_OPT, $1, NULL); }
+			| { $$ = new_glsl_node(CONDITION_OPT, NULL); }
 			;
 
-condition		: expression { $$ = new_node(EXPRESSION_CONDITION, $1, NULL); }
-			| fully_specified_type variable_identifier EQUAL initializer { $$ = new_node(ASSIGNMENT_CONDITION, $1, $2, $4, NULL); }
+condition		: expression { $$ = new_glsl_node(EXPRESSION_CONDITION, $1, NULL); }
+			| fully_specified_type variable_identifier EQUAL initializer { $$ = new_glsl_node(ASSIGNMENT_CONDITION, $1, $2, $4, NULL); }
 			;
 
-for_rest_statement	: conditionopt SEMICOLON { $$ = new_node(FOR_REST_STATEMENT, $1, NULL); }
-			| conditionopt SEMICOLON expression { $$ = new_node(FOR_REST_STATEMENT, $1, $3, NULL); }
+for_rest_statement	: conditionopt SEMICOLON { $$ = new_glsl_node(FOR_REST_STATEMENT, $1, NULL); }
+			| conditionopt SEMICOLON expression { $$ = new_glsl_node(FOR_REST_STATEMENT, $1, $3, NULL); }
 			;
 
-jump_statement		: CONTINUE SEMICOLON { $$ = new_node(CONTINUE, NULL); }
-			| BREAK SEMICOLON { $$ = new_node(BREAK, NULL); }
-			| RETURN SEMICOLON { $$ = new_node(RETURN, NULL); }
-			| RETURN expression SEMICOLON { $$ = new_node(RETURN, $2, NULL); }
-			| DISCARD SEMICOLON { $$ = new_node(DISCARD, NULL); }
+jump_statement		: CONTINUE SEMICOLON { $$ = new_glsl_node(CONTINUE, NULL); }
+			| BREAK SEMICOLON { $$ = new_glsl_node(BREAK, NULL); }
+			| RETURN SEMICOLON { $$ = new_glsl_node(RETURN, NULL); }
+			| RETURN expression SEMICOLON { $$ = new_glsl_node(RETURN, $2, NULL); }
+			| DISCARD SEMICOLON { $$ = new_glsl_node(DISCARD, NULL); }
 			;
 
-function_prototype	: function_declarator RIGHT_PAREN { $$ = new_node(FUNCTION_PROTOTYPE, $1, NULL); }
+function_prototype	: function_declarator RIGHT_PAREN { $$ = new_glsl_node(FUNCTION_PROTOTYPE, $1, NULL); }
 			;
 
-function_declarator	: function_header { $$ = new_node(FUNCTION_DECLARATION, $1, NULL); }
-			| function_header function_parameter_list { $$ = new_node(FUNCTION_DECLARATION, $1, $2, NULL); }
+function_declarator	: function_header { $$ = new_glsl_node(FUNCTION_DECLARATION, $1, NULL); }
+			| function_header function_parameter_list { $$ = new_glsl_node(FUNCTION_DECLARATION, $1, $2, NULL); }
 			;
 
 function_parameter_list : parameter_declaration { $$ = $1; }
-			| function_parameter_list COMMA parameter_declaration { $$ = new_node(FUNCTION_PARAMETER_LIST, $1, $3, NULL); } 
+			| function_parameter_list COMMA parameter_declaration { $$ = new_glsl_node(FUNCTION_PARAMETER_LIST, $1, $3, NULL); }
 			;
 
-parameter_declaration	: type_qualifier parameter_declarator { $$ = new_node(PARAMETER_DECLARATION, $1, $2, NULL); }
-			| parameter_declarator { $$ = new_node(PARAMETER_DECLARATION, new_node(TYPE_QUALIFIER_LIST, NULL), $1, NULL); }
-			| type_qualifier parameter_type_specifier { $$ = new_node(PARAMETER_DECLARATION, $1, $2, NULL); }
-			| parameter_type_specifier { $$ = new_node(PARAMETER_DECLARATION, new_node(TYPE_QUALIFIER_LIST, NULL), $1, NULL); }
+parameter_declaration	: type_qualifier parameter_declarator { $$ = new_glsl_node(PARAMETER_DECLARATION, $1, $2, NULL); }
+			| parameter_declarator { $$ = new_glsl_node(PARAMETER_DECLARATION, new_glsl_node(TYPE_QUALIFIER_LIST, NULL), $1, NULL); }
+			| type_qualifier parameter_type_specifier { $$ = new_glsl_node(PARAMETER_DECLARATION, $1, $2, NULL); }
+			| parameter_type_specifier { $$ = new_glsl_node(PARAMETER_DECLARATION, new_glsl_node(TYPE_QUALIFIER_LIST, NULL), $1, NULL); }
 			;
 
-parameter_declarator	: type_specifier param_name { $$ = new_node(PARAMETER_DECLARATOR, $1, NULL); $$->data.str = $2; }
-			| type_specifier param_name array_specifier_list { $$ = new_node(PARAMETER_DECLARATOR, $1, $3, NULL); $$->data.str = $2; }
+parameter_declarator	: type_specifier param_name { $$ = new_glsl_node(PARAMETER_DECLARATOR, $1, NULL); $$->data.str = glsl_parse_strdup($2); }
+			| type_specifier param_name array_specifier_list { $$ = new_glsl_node(PARAMETER_DECLARATOR, $1, $3, NULL); $$->data.str = glsl_parse_strdup($2); }
 			;
 
-function_header		: fully_specified_type function_name LEFT_PAREN { $$ = new_node(FUNCTION_HEADER, $1, NULL); $$->data.str = $2; }
+function_header		: fully_specified_type function_name LEFT_PAREN { $$ = new_glsl_node(FUNCTION_HEADER, $1, NULL); $$->data.str = glsl_parse_strdup($2); }
 			;
 
-fully_specified_type	: type_specifier { $$ = new_node(PARAMETER_DECLARATION, new_node(TYPE_QUALIFIER_LIST, NULL), $1, NULL); }
-			| type_qualifier type_specifier { $$ = new_node(PARAMETER_DECLARATION, $1, $2, NULL); }
+fully_specified_type	: type_specifier { $$ = new_glsl_node(FULLY_SPECIFIED_TYPE, new_glsl_node(TYPE_QUALIFIER_LIST, NULL), $1, NULL); }
+			| type_qualifier type_specifier { $$ = new_glsl_node(FULLY_SPECIFIED_TYPE, $1, $2, NULL); }
 			;
 
-parameter_type_specifier : type_specifier { $$ = new_node(PARAMETER_DECLARATOR, $1, NULL); $$->data.str = NULL; }
+parameter_type_specifier : type_specifier { $$ = new_glsl_node(PARAMETER_DECLARATOR, $1, NULL); $$->data.str = NULL; }
 			;
 
-type_specifier		: type_specifier_nonarray { $$ = new_node(TYPE_SPECIFIER, $1, NULL); }
-			| type_specifier_nonarray array_specifier { $$ = new_node(TYPE_SPECIFIER, $1, $2, NULL); }
+type_specifier		: type_specifier_nonarray { $$ = new_glsl_node(TYPE_SPECIFIER, $1, NULL); }
+			| type_specifier_nonarray array_specifier { $$ = new_glsl_node(TYPE_SPECIFIER, $1, $2, NULL); }
 			;
 
 array_specifier_list	: array_specifier { $$ = $1; }
-		     	| array_specifier_list array_specifier { $$ = new_node(ARRAY_SPECIFIER_LIST, $1, $2, NULL); }
+		     	| array_specifier_list array_specifier { $$ = new_glsl_node(ARRAY_SPECIFIER_LIST, $1, $2, NULL); }
 			;
 
-array_specifier		: LEFT_BRACKET RIGHT_BRACKET { $$ = new_node(ARRAY_SPECIFIER, NULL); }
-			| LEFT_BRACKET constant_expression RIGHT_BRACKET { $$ = new_node(ARRAY_SPECIFIER, $2, NULL); }
+array_specifier		: LEFT_BRACKET RIGHT_BRACKET { $$ = new_glsl_node(ARRAY_SPECIFIER, NULL); }
+			| LEFT_BRACKET constant_expression RIGHT_BRACKET { $$ = new_glsl_node(ARRAY_SPECIFIER, $2, NULL); }
 			;
 
-type_specifier_nonarray : VOID { $$ = new_node(VOID, NULL); }
-			| FLOAT { $$ = new_node(FLOAT, NULL); }
-			| DOUBLE { $$ = new_node(DOUBLE, NULL); }
-			| INT { $$ = new_node(INT, NULL); }
-			| UINT { $$ = new_node(UINT, NULL); }
-			| BOOL { $$ = new_node(BOOL, NULL); }
-			| VEC2 { $$ = new_node(VEC2, NULL); }
-			| VEC3 { $$ = new_node(VEC3, NULL); }
-			| VEC4 { $$ = new_node(VEC4, NULL); }
-			| DVEC2 { $$ = new_node(DVEC2, NULL); }
-			| DVEC3 { $$ = new_node(DVEC3, NULL); }
-			| DVEC4 { $$ = new_node(DVEC4, NULL); }
-			| BVEC2 { $$ = new_node(BVEC2, NULL); }
-			| BVEC3 { $$ = new_node(BVEC3, NULL); }
-			| BVEC4 { $$ = new_node(BVEC4, NULL); }
-			| IVEC2 { $$ = new_node(IVEC2, NULL); }
-			| IVEC3 { $$ = new_node(IVEC3, NULL); }
-			| IVEC4 { $$ = new_node(IVEC4, NULL); }
-			| UVEC2 { $$ = new_node(UVEC2, NULL); }
-			| UVEC3 { $$ = new_node(UVEC3, NULL); }
-			| UVEC4 { $$ = new_node(UVEC4, NULL); }
-			| MAT2 { $$ = new_node(MAT2, NULL); }
-			| MAT3 { $$ = new_node(MAT3, NULL); }
-			| MAT4 { $$ = new_node(MAT4, NULL); }
-			| MAT2X2 { $$ = new_node(MAT2X2, NULL); }
-			| MAT2X3 { $$ = new_node(MAT2X3, NULL); }
-			| MAT2X4 { $$ = new_node(MAT2X4, NULL); }
-			| MAT3X2 { $$ = new_node(MAT3X2, NULL); }
-			| MAT3X3 { $$ = new_node(MAT3X3, NULL); }
-			| MAT3X4 { $$ = new_node(MAT3X4, NULL); }
-			| MAT4X2 { $$ = new_node(MAT4X2, NULL); }
-			| MAT4X3 { $$ = new_node(MAT4X3, NULL); }
-			| MAT4X4 { $$ = new_node(MAT4X4, NULL); }
-			| DMAT2 { $$ = new_node(DMAT2, NULL); }
-			| DMAT3 { $$ = new_node(DMAT3, NULL); }
-			| DMAT4 { $$ = new_node(DMAT4, NULL); }
-			| DMAT2X2 { $$ = new_node(DMAT2X2, NULL); }
-			| DMAT2X3 { $$ = new_node(DMAT2X3, NULL); }
-			| DMAT2X4 { $$ = new_node(DMAT2X4, NULL); }
-			| DMAT3X2 { $$ = new_node(DMAT3X2, NULL); }
-			| DMAT3X3 { $$ = new_node(DMAT3X3, NULL); }
-			| DMAT3X4 { $$ = new_node(DMAT3X4, NULL); }
-			| DMAT4X2 { $$ = new_node(DMAT4X2, NULL); }
-			| DMAT4X3 { $$ = new_node(DMAT4X3, NULL); }
-			| DMAT4X4 { $$ = new_node(DMAT4X4, NULL); }
-			| ATOMIC_UINT { $$ = new_node(UINT, NULL); }
-			| SAMPLER1D { $$ = new_node(SAMPLER1D, NULL); }
-			| SAMPLER2D { $$ = new_node(SAMPLER2D, NULL); }
-			| SAMPLER3D { $$ = new_node(SAMPLER3D, NULL); }
-			| SAMPLERCUBE { $$ = new_node(SAMPLERCUBE, NULL); }
-			| SAMPLER1DSHADOW { $$ = new_node(SAMPLER1DSHADOW, NULL); }
-			| SAMPLER2DSHADOW { $$ = new_node(SAMPLER2DSHADOW, NULL); }
-			| SAMPLERCUBESHADOW { $$ = new_node(SAMPLERCUBESHADOW, NULL); }
-			| SAMPLER1DARRAY { $$ = new_node(SAMPLER1DARRAY, NULL); }
-			| SAMPLER2DARRAY { $$ = new_node(SAMPLER2DARRAY, NULL); }
-			| SAMPLER1DARRAYSHADOW { $$ = new_node(SAMPLER1DARRAYSHADOW, NULL); }
-			| SAMPLER2DARRAYSHADOW { $$ = new_node(SAMPLER2DARRAYSHADOW, NULL); }
-			| SAMPLERCUBEARRAY { $$ = new_node(SAMPLERCUBEARRAY, NULL); }
-			| SAMPLERCUBEARRAYSHADOW { $$ = new_node(SAMPLERCUBEARRAYSHADOW, NULL); }
-			| ISAMPLER1D { $$ = new_node(ISAMPLER1D, NULL); }
-			| ISAMPLER2D { $$ = new_node(ISAMPLER2D, NULL); }
-			| ISAMPLER3D { $$ = new_node(ISAMPLER3D, NULL); }
-			| ISAMPLERCUBE { $$ = new_node(ISAMPLERCUBE, NULL); }
-			| ISAMPLER1DARRAY { $$ = new_node(ISAMPLER1DARRAY, NULL); }
-			| ISAMPLER2DARRAY { $$ = new_node(ISAMPLER2DARRAY, NULL); }
-			| ISAMPLERCUBEARRAY { $$ = new_node(ISAMPLERCUBEARRAY, NULL); }
-			| USAMPLER1D { $$ = new_node(USAMPLER1D, NULL); }
-			| USAMPLER2D { $$ = new_node(USAMPLER2D, NULL); }
-			| USAMPLER3D { $$ = new_node(USAMPLER3D, NULL); }
-			| USAMPLERCUBE { $$ = new_node(USAMPLERCUBE, NULL); }
-			| USAMPLER1DARRAY { $$ = new_node(USAMPLER1DARRAY, NULL); }
-			| USAMPLER2DARRAY { $$ = new_node(USAMPLER2DARRAY, NULL); }
-			| USAMPLERCUBEARRAY { $$ = new_node(USAMPLERCUBEARRAY, NULL); }
-			| SAMPLER2DRECT { $$ = new_node(SAMPLER2DRECT, NULL); }
-			| SAMPLER2DRECTSHADOW { $$ = new_node(SAMPLER2DRECTSHADOW, NULL); }
-			| ISAMPLER2DRECT { $$ = new_node(ISAMPLER2DRECT, NULL); }
-			| USAMPLER2DRECT { $$ = new_node(USAMPLER2DRECT, NULL); }
-			| SAMPLERBUFFER { $$ = new_node(SAMPLERBUFFER, NULL); }
-			| ISAMPLERBUFFER { $$ = new_node(ISAMPLERBUFFER, NULL); }
-			| USAMPLERBUFFER { $$ = new_node(USAMPLERBUFFER, NULL); }
-			| SAMPLER2DMS { $$ = new_node(SAMPLER2DMS, NULL); }
-			| ISAMPLER2DMS { $$ = new_node(ISAMPLER2DMS, NULL); }
-			| USAMPLER2DMS { $$ = new_node(USAMPLER2DMS, NULL); }
-			| SAMPLER2DMSARRAY { $$ = new_node(SAMPLER2DMSARRAY, NULL); }
-			| ISAMPLER2DMSARRAY { $$ = new_node(ISAMPLER2DMSARRAY, NULL); }
-			| USAMPLER2DMSARRAY { $$ = new_node(USAMPLER2DMSARRAY, NULL); }
-			| IMAGE1D { $$ = new_node(IMAGE1D, NULL); }
-			| IIMAGE1D { $$ = new_node(IIMAGE1D, NULL); }
-			| UIMAGE1D { $$ = new_node(UIMAGE1D, NULL); }
-			| IMAGE2D { $$ = new_node(IMAGE2D, NULL); }
-			| IIMAGE2D { $$ = new_node(IIMAGE2D, NULL); }
-			| UIMAGE2D { $$ = new_node(UIMAGE2D, NULL); }
-			| IMAGE3D { $$ = new_node(IMAGE3D, NULL); }
-			| IIMAGE3D { $$ = new_node(IIMAGE3D, NULL); }
-			| UIMAGE3D { $$ = new_node(UIMAGE3D, NULL); }
-			| IMAGE2DRECT { $$ = new_node(IMAGE2DRECT, NULL); }
-			| IIMAGE2DRECT { $$ = new_node(IIMAGE2DRECT, NULL); }
-			| UIMAGE2DRECT { $$ = new_node(UIMAGE2DRECT, NULL); }
-			| IMAGECUBE { $$ = new_node(IMAGECUBE, NULL); }
-			| IIMAGECUBE { $$ = new_node(IIMAGECUBE, NULL); }
-			| UIMAGECUBE { $$ = new_node(UIMAGECUBE, NULL); }
-			| IMAGEBUFFER { $$ = new_node(IMAGEBUFFER, NULL); }
-			| IIMAGEBUFFER { $$ = new_node(IIMAGEBUFFER, NULL); }
-			| UIMAGEBUFFER { $$ = new_node(UIMAGEBUFFER, NULL); }
-			| IMAGE1DARRAY { $$ = new_node(IMAGE1DARRAY, NULL); }
-			| IIMAGE1DARRAY { $$ = new_node(IIMAGE1DARRAY, NULL); }
-			| UIMAGE1DARRAY { $$ = new_node(UIMAGE1DARRAY, NULL); }
-			| IMAGE2DARRAY { $$ = new_node(IMAGE2DARRAY, NULL); }
-			| IIMAGE2DARRAY { $$ = new_node(IIMAGE2DARRAY, NULL); }
-			| UIMAGE2DARRAY { $$ = new_node(UIMAGE2DARRAY, NULL); }
-			| IMAGECUBEARRAY { $$ = new_node(IMAGECUBEARRAY, NULL); }
-			| IIMAGECUBEARRAY { $$ = new_node(IIMAGECUBEARRAY, NULL); }
-			| UIMAGECUBEARRAY { $$ = new_node(UIMAGECUBEARRAY, NULL); }
-			| IMAGE2DMS { $$ = new_node(IMAGE2DMS, NULL); }
-			| IIMAGE2DMS { $$ = new_node(IIMAGE2DMS, NULL); }
-			| UIMAGE2DMS { $$ = new_node(UIMAGE2DMS, NULL); }
-			| IMAGE2DMSARRAY { $$ = new_node(IMAGE2DMSARRAY, NULL); }
-			| IIMAGE2DMSARRAY { $$ = new_node(IIMAGE2DMSARRAY, NULL); }
-			| UIMAGE2DMSARRAY { $$ = new_node(UIMAGE2DMSARRAY, NULL); }
+type_specifier_nonarray : VOID { $$ = new_glsl_node(VOID, NULL); }
+			| FLOAT { $$ = new_glsl_node(FLOAT, NULL); }
+			| DOUBLE { $$ = new_glsl_node(DOUBLE, NULL); }
+			| INT { $$ = new_glsl_node(INT, NULL); }
+			| UINT { $$ = new_glsl_node(UINT, NULL); }
+			| BOOL { $$ = new_glsl_node(BOOL, NULL); }
+			| VEC2 { $$ = new_glsl_node(VEC2, NULL); }
+			| VEC3 { $$ = new_glsl_node(VEC3, NULL); }
+			| VEC4 { $$ = new_glsl_node(VEC4, NULL); }
+			| DVEC2 { $$ = new_glsl_node(DVEC2, NULL); }
+			| DVEC3 { $$ = new_glsl_node(DVEC3, NULL); }
+			| DVEC4 { $$ = new_glsl_node(DVEC4, NULL); }
+			| BVEC2 { $$ = new_glsl_node(BVEC2, NULL); }
+			| BVEC3 { $$ = new_glsl_node(BVEC3, NULL); }
+			| BVEC4 { $$ = new_glsl_node(BVEC4, NULL); }
+			| IVEC2 { $$ = new_glsl_node(IVEC2, NULL); }
+			| IVEC3 { $$ = new_glsl_node(IVEC3, NULL); }
+			| IVEC4 { $$ = new_glsl_node(IVEC4, NULL); }
+			| UVEC2 { $$ = new_glsl_node(UVEC2, NULL); }
+			| UVEC3 { $$ = new_glsl_node(UVEC3, NULL); }
+			| UVEC4 { $$ = new_glsl_node(UVEC4, NULL); }
+			| MAT2 { $$ = new_glsl_node(MAT2, NULL); }
+			| MAT3 { $$ = new_glsl_node(MAT3, NULL); }
+			| MAT4 { $$ = new_glsl_node(MAT4, NULL); }
+			| MAT2X2 { $$ = new_glsl_node(MAT2X2, NULL); }
+			| MAT2X3 { $$ = new_glsl_node(MAT2X3, NULL); }
+			| MAT2X4 { $$ = new_glsl_node(MAT2X4, NULL); }
+			| MAT3X2 { $$ = new_glsl_node(MAT3X2, NULL); }
+			| MAT3X3 { $$ = new_glsl_node(MAT3X3, NULL); }
+			| MAT3X4 { $$ = new_glsl_node(MAT3X4, NULL); }
+			| MAT4X2 { $$ = new_glsl_node(MAT4X2, NULL); }
+			| MAT4X3 { $$ = new_glsl_node(MAT4X3, NULL); }
+			| MAT4X4 { $$ = new_glsl_node(MAT4X4, NULL); }
+			| DMAT2 { $$ = new_glsl_node(DMAT2, NULL); }
+			| DMAT3 { $$ = new_glsl_node(DMAT3, NULL); }
+			| DMAT4 { $$ = new_glsl_node(DMAT4, NULL); }
+			| DMAT2X2 { $$ = new_glsl_node(DMAT2X2, NULL); }
+			| DMAT2X3 { $$ = new_glsl_node(DMAT2X3, NULL); }
+			| DMAT2X4 { $$ = new_glsl_node(DMAT2X4, NULL); }
+			| DMAT3X2 { $$ = new_glsl_node(DMAT3X2, NULL); }
+			| DMAT3X3 { $$ = new_glsl_node(DMAT3X3, NULL); }
+			| DMAT3X4 { $$ = new_glsl_node(DMAT3X4, NULL); }
+			| DMAT4X2 { $$ = new_glsl_node(DMAT4X2, NULL); }
+			| DMAT4X3 { $$ = new_glsl_node(DMAT4X3, NULL); }
+			| DMAT4X4 { $$ = new_glsl_node(DMAT4X4, NULL); }
+			| ATOMIC_UINT { $$ = new_glsl_node(UINT, NULL); }
+			| SAMPLER1D { $$ = new_glsl_node(SAMPLER1D, NULL); }
+			| SAMPLER2D { $$ = new_glsl_node(SAMPLER2D, NULL); }
+			| SAMPLER3D { $$ = new_glsl_node(SAMPLER3D, NULL); }
+			| SAMPLERCUBE { $$ = new_glsl_node(SAMPLERCUBE, NULL); }
+			| SAMPLER1DSHADOW { $$ = new_glsl_node(SAMPLER1DSHADOW, NULL); }
+			| SAMPLER2DSHADOW { $$ = new_glsl_node(SAMPLER2DSHADOW, NULL); }
+			| SAMPLERCUBESHADOW { $$ = new_glsl_node(SAMPLERCUBESHADOW, NULL); }
+			| SAMPLER1DARRAY { $$ = new_glsl_node(SAMPLER1DARRAY, NULL); }
+			| SAMPLER2DARRAY { $$ = new_glsl_node(SAMPLER2DARRAY, NULL); }
+			| SAMPLER1DARRAYSHADOW { $$ = new_glsl_node(SAMPLER1DARRAYSHADOW, NULL); }
+			| SAMPLER2DARRAYSHADOW { $$ = new_glsl_node(SAMPLER2DARRAYSHADOW, NULL); }
+			| SAMPLERCUBEARRAY { $$ = new_glsl_node(SAMPLERCUBEARRAY, NULL); }
+			| SAMPLERCUBEARRAYSHADOW { $$ = new_glsl_node(SAMPLERCUBEARRAYSHADOW, NULL); }
+			| ISAMPLER1D { $$ = new_glsl_node(ISAMPLER1D, NULL); }
+			| ISAMPLER2D { $$ = new_glsl_node(ISAMPLER2D, NULL); }
+			| ISAMPLER3D { $$ = new_glsl_node(ISAMPLER3D, NULL); }
+			| ISAMPLERCUBE { $$ = new_glsl_node(ISAMPLERCUBE, NULL); }
+			| ISAMPLER1DARRAY { $$ = new_glsl_node(ISAMPLER1DARRAY, NULL); }
+			| ISAMPLER2DARRAY { $$ = new_glsl_node(ISAMPLER2DARRAY, NULL); }
+			| ISAMPLERCUBEARRAY { $$ = new_glsl_node(ISAMPLERCUBEARRAY, NULL); }
+			| USAMPLER1D { $$ = new_glsl_node(USAMPLER1D, NULL); }
+			| USAMPLER2D { $$ = new_glsl_node(USAMPLER2D, NULL); }
+			| USAMPLER3D { $$ = new_glsl_node(USAMPLER3D, NULL); }
+			| USAMPLERCUBE { $$ = new_glsl_node(USAMPLERCUBE, NULL); }
+			| USAMPLER1DARRAY { $$ = new_glsl_node(USAMPLER1DARRAY, NULL); }
+			| USAMPLER2DARRAY { $$ = new_glsl_node(USAMPLER2DARRAY, NULL); }
+			| USAMPLERCUBEARRAY { $$ = new_glsl_node(USAMPLERCUBEARRAY, NULL); }
+			| SAMPLER2DRECT { $$ = new_glsl_node(SAMPLER2DRECT, NULL); }
+			| SAMPLER2DRECTSHADOW { $$ = new_glsl_node(SAMPLER2DRECTSHADOW, NULL); }
+			| ISAMPLER2DRECT { $$ = new_glsl_node(ISAMPLER2DRECT, NULL); }
+			| USAMPLER2DRECT { $$ = new_glsl_node(USAMPLER2DRECT, NULL); }
+			| SAMPLERBUFFER { $$ = new_glsl_node(SAMPLERBUFFER, NULL); }
+			| ISAMPLERBUFFER { $$ = new_glsl_node(ISAMPLERBUFFER, NULL); }
+			| USAMPLERBUFFER { $$ = new_glsl_node(USAMPLERBUFFER, NULL); }
+			| SAMPLER2DMS { $$ = new_glsl_node(SAMPLER2DMS, NULL); }
+			| ISAMPLER2DMS { $$ = new_glsl_node(ISAMPLER2DMS, NULL); }
+			| USAMPLER2DMS { $$ = new_glsl_node(USAMPLER2DMS, NULL); }
+			| SAMPLER2DMSARRAY { $$ = new_glsl_node(SAMPLER2DMSARRAY, NULL); }
+			| ISAMPLER2DMSARRAY { $$ = new_glsl_node(ISAMPLER2DMSARRAY, NULL); }
+			| USAMPLER2DMSARRAY { $$ = new_glsl_node(USAMPLER2DMSARRAY, NULL); }
+			| IMAGE1D { $$ = new_glsl_node(IMAGE1D, NULL); }
+			| IIMAGE1D { $$ = new_glsl_node(IIMAGE1D, NULL); }
+			| UIMAGE1D { $$ = new_glsl_node(UIMAGE1D, NULL); }
+			| IMAGE2D { $$ = new_glsl_node(IMAGE2D, NULL); }
+			| IIMAGE2D { $$ = new_glsl_node(IIMAGE2D, NULL); }
+			| UIMAGE2D { $$ = new_glsl_node(UIMAGE2D, NULL); }
+			| IMAGE3D { $$ = new_glsl_node(IMAGE3D, NULL); }
+			| IIMAGE3D { $$ = new_glsl_node(IIMAGE3D, NULL); }
+			| UIMAGE3D { $$ = new_glsl_node(UIMAGE3D, NULL); }
+			| IMAGE2DRECT { $$ = new_glsl_node(IMAGE2DRECT, NULL); }
+			| IIMAGE2DRECT { $$ = new_glsl_node(IIMAGE2DRECT, NULL); }
+			| UIMAGE2DRECT { $$ = new_glsl_node(UIMAGE2DRECT, NULL); }
+			| IMAGECUBE { $$ = new_glsl_node(IMAGECUBE, NULL); }
+			| IIMAGECUBE { $$ = new_glsl_node(IIMAGECUBE, NULL); }
+			| UIMAGECUBE { $$ = new_glsl_node(UIMAGECUBE, NULL); }
+			| IMAGEBUFFER { $$ = new_glsl_node(IMAGEBUFFER, NULL); }
+			| IIMAGEBUFFER { $$ = new_glsl_node(IIMAGEBUFFER, NULL); }
+			| UIMAGEBUFFER { $$ = new_glsl_node(UIMAGEBUFFER, NULL); }
+			| IMAGE1DARRAY { $$ = new_glsl_node(IMAGE1DARRAY, NULL); }
+			| IIMAGE1DARRAY { $$ = new_glsl_node(IIMAGE1DARRAY, NULL); }
+			| UIMAGE1DARRAY { $$ = new_glsl_node(UIMAGE1DARRAY, NULL); }
+			| IMAGE2DARRAY { $$ = new_glsl_node(IMAGE2DARRAY, NULL); }
+			| IIMAGE2DARRAY { $$ = new_glsl_node(IIMAGE2DARRAY, NULL); }
+			| UIMAGE2DARRAY { $$ = new_glsl_node(UIMAGE2DARRAY, NULL); }
+			| IMAGECUBEARRAY { $$ = new_glsl_node(IMAGECUBEARRAY, NULL); }
+			| IIMAGECUBEARRAY { $$ = new_glsl_node(IIMAGECUBEARRAY, NULL); }
+			| UIMAGECUBEARRAY { $$ = new_glsl_node(UIMAGECUBEARRAY, NULL); }
+			| IMAGE2DMS { $$ = new_glsl_node(IMAGE2DMS, NULL); }
+			| IIMAGE2DMS { $$ = new_glsl_node(IIMAGE2DMS, NULL); }
+			| UIMAGE2DMS { $$ = new_glsl_node(UIMAGE2DMS, NULL); }
+			| IMAGE2DMSARRAY { $$ = new_glsl_node(IMAGE2DMSARRAY, NULL); }
+			| IIMAGE2DMSARRAY { $$ = new_glsl_node(IIMAGE2DMSARRAY, NULL); }
+			| UIMAGE2DMSARRAY { $$ = new_glsl_node(UIMAGE2DMSARRAY, NULL); }
 			| struct_specifier { $$ = $1; }
-			| type_specifier_identifier { $$ = new_node(IDENTIFIER, NULL); $$->data.str = $1; }
+			| type_specifier_identifier { $$ = $1; }
 			;
 
-struct_specifier	: STRUCT struct_name LEFT_BRACE struct_declaration_list RIGHT_BRACE { $$ = new_node(STRUCT_SPECIFIER, $4, NULL); $$->data.str = $2; } 
-			| STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE { $$ = new_node(STRUCT_SPECIFIER, $3, NULL); $$->data.str = NULL; }
+struct_specifier	: STRUCT struct_name LEFT_BRACE struct_declaration_list RIGHT_BRACE { $$ = new_glsl_node(STRUCT_SPECIFIER, $4, NULL); $$->data.str = glsl_parse_strdup($2); }
+			| STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE { $$ = new_glsl_node(STRUCT_SPECIFIER, $3, NULL); $$->data.str = NULL; }
 			;
 
 struct_declaration_list : struct_declaration { $$ = $1; }
-			| struct_declaration_list struct_declaration { $$ = new_node(SEMICOLON, $1, $2, NULL); }
+			| struct_declaration_list struct_declaration { $$ = new_glsl_node(SEMICOLON, $1, $2, NULL); }
 			;
 
-struct_declaration	: type_specifier struct_declarator_list SEMICOLON { $$ = new_node(STRUCT_DECLARATION, new_node(TYPE_QUALIFIER_LIST, NULL), $1, $2, NULL); } 
-			| type_qualifier type_specifier struct_declarator_list SEMICOLON { $$ = new_node(STRUCT_DECLARATION, $1, $2, $3, NULL); }
+struct_declaration	: type_specifier struct_declarator_list SEMICOLON { $$ = new_glsl_node(STRUCT_DECLARATION, new_glsl_node(TYPE_QUALIFIER_LIST, NULL), $1, $2, NULL); }
+			| type_qualifier type_specifier struct_declarator_list SEMICOLON { $$ = new_glsl_node(STRUCT_DECLARATION, $1, $2, $3, NULL); }
 			;
 
 struct_declarator_list	: struct_declarator { $$ = $1; }
-			| struct_declarator_list COMMA struct_declarator { $$ = new_node(COMMA, $1, $3, NULL); }
+			| struct_declarator_list COMMA struct_declarator { $$ = new_glsl_node(STRUCT_DECLARATOR_LIST, $1, $3, NULL); }
 			;
 
-struct_declarator	: decl_identifier { $$ = new_node(STRUCT_DECLARATOR, $1, NULL); }
-			| decl_identifier array_specifier { $$ = new_node(STRUCT_DECLARATOR, $1, $2, NULL); }
+struct_declarator	: decl_identifier { $$ = new_glsl_node(STRUCT_DECLARATOR, $1, NULL); }
+			| decl_identifier array_specifier { $$ = new_glsl_node(STRUCT_DECLARATOR, $1, $2, NULL); }
 			;
 
-type_qualifier		: single_type_qualifier { $$ = new_node(TYPE_QUALIFIER_LIST, $1, NULL); }
-			| type_qualifier single_type_qualifier { $$ = new_node(TYPE_QUALIFIER_LIST, $1, $2, NULL); }
+type_qualifier		: single_type_qualifier { $$ = new_glsl_node(TYPE_QUALIFIER_LIST, $1, NULL); }
+			| type_qualifier single_type_qualifier { $$ = new_glsl_node(TYPE_QUALIFIER_LIST, $1, $2, NULL); }
 			;
 
 single_type_qualifier	: storage_qualifier { $$ = $1; }
@@ -1040,63 +1086,63 @@ single_type_qualifier	: storage_qualifier { $$ = $1; }
 			| precise_qualifier { $$ = $1; }
 			;
 
-layout_qualifier	: LAYOUT LEFT_PAREN layout_qualifier_id_list RIGHT_PAREN { $$ = new_node(LAYOUT, $3, NULL); }
+layout_qualifier	: LAYOUT LEFT_PAREN layout_qualifier_id_list RIGHT_PAREN { $$ = new_glsl_node(LAYOUT, $3, NULL); }
 			;
 
 layout_qualifier_id_list: layout_qualifier_id { $$ = $1; }
-			| layout_qualifier_id_list COMMA layout_qualifier_id { $$ = new_node(COMMA, $1, $3, NULL); }
+			| layout_qualifier_id_list COMMA layout_qualifier_id { $$ = new_glsl_node(COMMA, $1, $3, NULL); }
 			;
 
-layout_qualifier_id	: IDENTIFIER { $$ = new_node(IDENTIFIER, NULL); $$->data.str = $1;}
-			| IDENTIFIER EQUAL constant_expression { $$ = new_node(IDENTIFIER, $3, NULL); $$->data.str = $1; }
-			| SHARED { $$ = new_node(SHARED, NULL); }
+layout_qualifier_id	: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1);}
+			| IDENTIFIER EQUAL constant_expression { $$ = new_glsl_node(IDENTIFIER, $3, NULL); $$->data.str = glsl_parse_strdup($1); }
+			| SHARED { $$ = new_glsl_node(SHARED, NULL); }
 			;
 
-precision_qualifier	: HIGHP { $$ = new_node(HIGHP, NULL); }
-			| MEDIUMP { $$ = new_node(MEDIUMP, NULL); }
-			| LOWP { $$ = new_node(LOWP, NULL); }
+precision_qualifier	: HIGHP { $$ = new_glsl_node(HIGHP, NULL); }
+			| MEDIUMP { $$ = new_glsl_node(MEDIUMP, NULL); }
+			| LOWP { $$ = new_glsl_node(LOWP, NULL); }
 			;
 
-interpolation_qualifier : SMOOTH { $$ = new_node(SMOOTH, NULL); }
-			| FLAT { $$ = new_node(FLAT, NULL); }
-			| NOPERSPECTIVE { $$ = new_node(NOPERSPECTIVE, NULL); }
+interpolation_qualifier : SMOOTH { $$ = new_glsl_node(SMOOTH, NULL); }
+			| FLAT { $$ = new_glsl_node(FLAT, NULL); }
+			| NOPERSPECTIVE { $$ = new_glsl_node(NOPERSPECTIVE, NULL); }
 			;
 
-invariant_qualifier	: INVARIANT { $$ = new_node(INVARIANT, NULL); }
+invariant_qualifier	: INVARIANT { $$ = new_glsl_node(INVARIANT, NULL); }
 			;
 
-precise_qualifier 	: PRECISE { $$ = new_node(PRECISE, NULL); }
+precise_qualifier 	: PRECISE { $$ = new_glsl_node(PRECISE, NULL); }
 			;
 
-storage_qualifier	: CONST { $$ = new_node(CONST, NULL); }
-			| INOUT { $$ = new_node(INOUT, NULL); }
-			| IN { $$ = new_node(IN, NULL); }
-			| OUT { $$ = new_node(OUT, NULL); }
-			| CENTROID { $$ = new_node(CENTROID, NULL); }
-			| PATCH { $$ = new_node(PATCH, NULL); }
-			| SAMPLE { $$ = new_node(SAMPLE, NULL); }
-			| UNIFORM { $$ = new_node(UNIFORM, NULL); }
-			| BUFFER { $$ = new_node(BUFFER, NULL); }
-			| SHARED { $$ = new_node(SHARED, NULL); }
-			| COHERENT { $$ = new_node(COHERENT, NULL); }
-			| VOLATILE { $$ = new_node(VOLATILE, NULL); }
-			| RESTRICT { $$ = new_node(RESTRICT, NULL); }
-			| READONLY { $$ = new_node(READONLY, NULL); }
-			| WRITEONLY { $$ = new_node(WRITEONLY, NULL); }
-			| SUBROUTINE { $$ = new_node(SUBROUTINE, NULL); }
-			| SUBROUTINE LEFT_PAREN type_name_list RIGHT_PAREN  { $$ = new_node(SUBROUTINE, NULL); }
+storage_qualifier	: CONST { $$ = new_glsl_node(CONST, NULL); }
+			| INOUT { $$ = new_glsl_node(INOUT, NULL); }
+			| IN { $$ = new_glsl_node(IN, NULL); }
+			| OUT { $$ = new_glsl_node(OUT, NULL); }
+			| CENTROID { $$ = new_glsl_node(CENTROID, NULL); }
+			| PATCH { $$ = new_glsl_node(PATCH, NULL); }
+			| SAMPLE { $$ = new_glsl_node(SAMPLE, NULL); }
+			| UNIFORM { $$ = new_glsl_node(UNIFORM, NULL); }
+			| BUFFER { $$ = new_glsl_node(BUFFER, NULL); }
+			| SHARED { $$ = new_glsl_node(SHARED, NULL); }
+			| COHERENT { $$ = new_glsl_node(COHERENT, NULL); }
+			| VOLATILE { $$ = new_glsl_node(VOLATILE, NULL); }
+			| RESTRICT { $$ = new_glsl_node(RESTRICT, NULL); }
+			| READONLY { $$ = new_glsl_node(READONLY, NULL); }
+			| WRITEONLY { $$ = new_glsl_node(WRITEONLY, NULL); }
+			| SUBROUTINE { $$ = new_glsl_node(SUBROUTINE, NULL); }
+			| SUBROUTINE LEFT_PAREN type_name_list RIGHT_PAREN  { $$ = new_glsl_node(SUBROUTINE, NULL); }
 			;
 
-type_name_list		: type_name { $$ = new_node(TYPE_NAME_LIST, NULL); $$->data.str = $1; }
-			| type_name_list COMMA type_name { $$ = new_node(COMMA, $1, NULL); $$->data.str = $3; }
+type_name_list		: type_name { $$ = new_glsl_node(TYPE_NAME_LIST, NULL); $$->data.str = glsl_parse_strdup($1); }
+			| type_name_list COMMA type_name { $$ = new_glsl_node(TYPE_NAME_LIST, $1, NULL); $$->data.str = glsl_parse_strdup($3); }
 			;
 
 expression		: assignment_expression { $$ = $1; }
-			| expression COMMA assignment_expression { $$ = new_node(COMMA, $1, $3, NULL); }
+			| expression COMMA assignment_expression { $$ = new_glsl_node(COMMA, $1, $3, NULL); }
 			;
 
 assignment_expression	: conditional_expression { $$ = $1; }
-			| unary_expression assignment_operator assignment_expression { $$ = new_node($2, $1, $3, NULL); }
+			| unary_expression assignment_operator assignment_expression { $$ = new_glsl_node($2, $1, $3, NULL); }
 			;
 
 assignment_operator	: EQUAL { $$ = EQUAL; }
@@ -1116,65 +1162,65 @@ constant_expression	: conditional_expression { $$ = $1; }
 			;
 
 conditional_expression	: logical_or_expression { $$ = $1; }
-			| logical_or_expression QUESTION expression COLON assignment_expression { $$ = new_node(QUESTION, $1, $3, $5, NULL); }
+			| logical_or_expression QUESTION expression COLON assignment_expression { $$ = new_glsl_node(QUESTION, $1, $3, $5, NULL); }
 			;
 
 logical_or_expression	: logical_xor_expression { $$ = $1; }
-			| logical_or_expression OR_OP logical_xor_expression { $$ = new_node(OR_OP, $1, $3, NULL); }
+			| logical_or_expression OR_OP logical_xor_expression { $$ = new_glsl_node(OR_OP, $1, $3, NULL); }
 			;
 
 logical_xor_expression	: logical_and_expression { $$ = $1; }
-			| logical_xor_expression XOR_OP logical_and_expression { $$ = new_node(XOR_OP, $1, $3, NULL); }
+			| logical_xor_expression XOR_OP logical_and_expression { $$ = new_glsl_node(XOR_OP, $1, $3, NULL); }
 			;
 
 logical_and_expression	: inclusive_or_expression { $$ = $1; }
-			| logical_and_expression AND_OP inclusive_or_expression { $$ = new_node(AND_OP, $1, $3, NULL); }
+			| logical_and_expression AND_OP inclusive_or_expression { $$ = new_glsl_node(AND_OP, $1, $3, NULL); }
 			;
 
 inclusive_or_expression : exclusive_or_expression { $$ = $1; }
-			| inclusive_or_expression VERTICAL_BAR exclusive_or_expression { $$ = new_node(VERTICAL_BAR, $1, $3, NULL); }
+			| inclusive_or_expression VERTICAL_BAR exclusive_or_expression { $$ = new_glsl_node(VERTICAL_BAR, $1, $3, NULL); }
 			;
 
 exclusive_or_expression	: and_expression { $$ = $1; }
-			| exclusive_or_expression CARET and_expression { $$ = new_node(CARET, $1, $3, NULL); }
+			| exclusive_or_expression CARET and_expression { $$ = new_glsl_node(CARET, $1, $3, NULL); }
 			;
 
 and_expression		: equality_expression { $$ = $1; }
-			| and_expression AMPERSAND equality_expression { $$ = new_node(AMPERSAND, $1, $3, NULL); }
+			| and_expression AMPERSAND equality_expression { $$ = new_glsl_node(AMPERSAND, $1, $3, NULL); }
 			;
 
 equality_expression	: relational_expression { $$ = $1; }
-			| equality_expression EQ_OP relational_expression { $$ = new_node(EQ_OP, $1, $3, NULL); }
-			| equality_expression NE_OP relational_expression { $$ = new_node(NE_OP, $1, $3, NULL); }
+			| equality_expression EQ_OP relational_expression { $$ = new_glsl_node(EQ_OP, $1, $3, NULL); }
+			| equality_expression NE_OP relational_expression { $$ = new_glsl_node(NE_OP, $1, $3, NULL); }
 			;
 
 relational_expression	: shift_expression { $$ = $1; }
-			| relational_expression LEFT_ANGLE shift_expression { $$ = new_node(LEFT_ANGLE, $1, $3, NULL); }
-			| relational_expression RIGHT_ANGLE shift_expression { $$ = new_node(RIGHT_ANGLE, $1, $3, NULL); }
-			| relational_expression LE_OP shift_expression { $$ = new_node(LE_OP, $1, $3, NULL); }
-			| relational_expression GE_OP shift_expression { $$ = new_node(GE_OP, $1, $3, NULL); }
+			| relational_expression LEFT_ANGLE shift_expression { $$ = new_glsl_node(LEFT_ANGLE, $1, $3, NULL); }
+			| relational_expression RIGHT_ANGLE shift_expression { $$ = new_glsl_node(RIGHT_ANGLE, $1, $3, NULL); }
+			| relational_expression LE_OP shift_expression { $$ = new_glsl_node(LE_OP, $1, $3, NULL); }
+			| relational_expression GE_OP shift_expression { $$ = new_glsl_node(GE_OP, $1, $3, NULL); }
 			;
 
 shift_expression	: additive_expression { $$ = $1; }
-			| shift_expression LEFT_OP additive_expression { $$ = new_node(LEFT_OP, $1, $3, NULL); }
-			| shift_expression RIGHT_OP additive_expression { $$ = new_node(RIGHT_OP, $1, $3, NULL); }
+			| shift_expression LEFT_OP additive_expression { $$ = new_glsl_node(LEFT_OP, $1, $3, NULL); }
+			| shift_expression RIGHT_OP additive_expression { $$ = new_glsl_node(RIGHT_OP, $1, $3, NULL); }
 			;
 
 additive_expression	: multiplicative_expression { $$ = $1; }
-			| additive_expression PLUS multiplicative_expression { $$ = new_node(PLUS, $1, $3, NULL); }
-			| additive_expression DASH multiplicative_expression { $$ = new_node(DASH, $1, $3, NULL); }
+			| additive_expression PLUS multiplicative_expression { $$ = new_glsl_node(PLUS, $1, $3, NULL); }
+			| additive_expression DASH multiplicative_expression { $$ = new_glsl_node(DASH, $1, $3, NULL); }
 			;
 
 multiplicative_expression : unary_expression { $$ = $1; }
-			| multiplicative_expression STAR unary_expression { $$ = new_node(STAR, $1, $3, NULL); }
-			| multiplicative_expression SLASH unary_expression { $$ = new_node(SLASH, $1, $3, NULL); }
-			| multiplicative_expression PERCENT unary_expression { $$ = new_node(PERCENT, $1, $3, NULL); }
+			| multiplicative_expression STAR unary_expression { $$ = new_glsl_node(STAR, $1, $3, NULL); }
+			| multiplicative_expression SLASH unary_expression { $$ = new_glsl_node(SLASH, $1, $3, NULL); }
+			| multiplicative_expression PERCENT unary_expression { $$ = new_glsl_node(PERCENT, $1, $3, NULL); }
 			;
 
 unary_expression	: postfix_expression { $$ = $1; }
-			| INC_OP unary_expression { $$ = new_node(INC_OP, $2, NULL); }
-			| DEC_OP unary_expression { $$ = new_node(DEC_OP, $2, NULL); }
-			| unary_operator unary_expression { $$ = new_node($1, $2, NULL); }
+			| INC_OP unary_expression { $$ = new_glsl_node(INC_OP, $2, NULL); }
+			| DEC_OP unary_expression { $$ = new_glsl_node(DEC_OP, $2, NULL); }
+			| unary_operator unary_expression { $$ = new_glsl_node($1, $2, NULL); }
 			;
 
 unary_operator		: PLUS { $$ = PLUS; }
@@ -1184,11 +1230,11 @@ unary_operator		: PLUS { $$ = PLUS; }
 			;
 
 postfix_expression	: primary_expression { $$ = $1; }
-			| postfix_expression LEFT_BRACKET integer_expression RIGHT_BRACKET { $$ = new_node(ARRAY_REF_OP, $1, $3, NULL); }
+			| postfix_expression LEFT_BRACKET integer_expression RIGHT_BRACKET { $$ = new_glsl_node(ARRAY_REF_OP, $1, $3, NULL); }
 			| function_call { $$ = $1; }
-			| postfix_expression DOT field_selection { $$ = new_node(DOT, $1, NULL); $$->data.str = $3; }
-			| postfix_expression INC_OP { $$ = new_node(POST_INC_OP, $1, NULL); }
-			| postfix_expression DEC_OP { $$ = new_node(POST_DEC_OP, $1, NULL); }
+			| postfix_expression DOT field_selection { $$ = new_glsl_node(DOT, $1, NULL); $$->data.str = glsl_parse_strdup($3); }
+			| postfix_expression INC_OP { $$ = new_glsl_node(POST_INC_OP, $1, NULL); }
+			| postfix_expression DEC_OP { $$ = new_glsl_node(POST_DEC_OP, $1, NULL); }
 			;
 
 integer_expression	: expression { $$ = $1; }
@@ -1204,28 +1250,93 @@ function_call_generic	: function_call_header_with_parameters RIGHT_PAREN { $$ = 
 			| function_call_header_no_parameters RIGHT_PAREN { $$ = $1; }
 			;
 
-function_call_header_no_parameters: function_call_header VOID { $$ = new_node(FUNCTION_CALL, $1, NULL); }
-			| function_call_header { $$ = new_node(FUNCTION_CALL, $1, NULL); }
+function_call_header_no_parameters: function_call_header VOID { $$ = new_glsl_node(FUNCTION_CALL, $1, NULL); }
+			| function_call_header { $$ = new_glsl_node(FUNCTION_CALL, $1, NULL); }
 			;
 
-function_call_header_with_parameters: function_call_header assignment_expression { $$ = new_node(FUNCTION_CALL, $1, $2, NULL); }
-			| function_call_header_with_parameters COMMA assignment_expression { $$ = new_node(COMMA, $1, $3, NULL); }
+function_call_header_with_parameters: function_call_header assignment_expression { $$ = new_glsl_node(FUNCTION_CALL, $1, $2, NULL); }
+			| function_call_header_with_parameters COMMA assignment_expression { $$ = new_glsl_node(FUNCTION_CALL_HEADER_WITH_PARAMETERS, $1, $3, NULL); }
 			;
 
 function_call_header	: function_identifier LEFT_PAREN { $$ = $1; }
 			;
 
-function_identifier	: type_specifier { $$ = new_node(TYPE_SPECIFIER, $1, NULL); }
-			| postfix_expression { $$ = new_node(POSTFIX_EXPRESSION, $1, NULL); }
+function_identifier	: type_specifier { $$ = new_glsl_node(TYPE_SPECIFIER, $1, NULL); }
+			| postfix_expression { $$ = new_glsl_node(POSTFIX_EXPRESSION, $1, NULL); }
 			;
 
-primary_expression	: variable_identifier { $$ = new_node(IDENTIFIER, NULL); $$->data.str = $1; }
-			| INTCONSTANT { $$ = new_node(INTCONSTANT, NULL); $$->data.i = $1; }
-			| UINTCONSTANT { $$ = new_node(UINTCONSTANT, NULL); $$->data.ui = $1; }
-			| FLOATCONSTANT { $$ = new_node(FLOATCONSTANT, NULL); $$->data.f = $1; }
-			| BOOLCONSTANT { $$ = new_node(BOOLCONSTANT, NULL); $$->data.b = $1; }
-			| DOUBLECONSTANT { $$ = new_node(DOUBLECONSTANT, NULL); $$->data.d = $1; }
+primary_expression	: variable_identifier { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
+			| INTCONSTANT { $$ = new_glsl_node(INTCONSTANT, NULL); $$->data.i = $1; }
+			| UINTCONSTANT { $$ = new_glsl_node(UINTCONSTANT, NULL); $$->data.ui = $1; }
+			| FLOATCONSTANT { $$ = new_glsl_node(FLOATCONSTANT, NULL); $$->data.f = $1; }
+			| BOOLCONSTANT { $$ = new_glsl_node(BOOLCONSTANT, NULL); $$->data.b = $1; }
+			| DOUBLECONSTANT { $$ = new_glsl_node(DOUBLECONSTANT, NULL); $$->data.d = $1; }
 			| LEFT_PAREN expression RIGHT_PAREN { $$ = $2; }
 			;
 
 %%
+
+
+void traverse_tree(struct glsl_node *n, int depth)
+{
+	int i;
+	for (i = 0; i < depth; i++) {
+		printf("\t");
+	}
+	if (token_to_str[n->code])
+		printf("%s", token_to_str[n->code]);
+	switch(n->code) {
+	case DOT:
+	case IDENTIFIER:
+	case BLOCK_IDENTIFIER:
+	case STRUCT_SPECIFIER:
+	case FUNCTION_HEADER:
+	case UNINITIALIZED_DECLARATION:
+	case PARAMETER_DECLARATOR:
+	case TYPE_NAME_LIST:
+	case DECLARATION_TAG:
+	case DECL_IDENTIFIER:
+		if (n->data.str) {
+			if (token_to_str[n->code])
+				printf(": ");
+			printf("%s", n->data.str);
+		}
+		break;
+	case FLOATCONSTANT:
+		if (token_to_str[n->code])
+			printf(": ");
+		printf("%f", n->data.f);
+		break;
+	case DOUBLECONSTANT:
+		if (token_to_str[n->code])
+			printf(": ");
+		printf("%f", n->data.d);
+		break;
+	case INTCONSTANT:
+		if (token_to_str[n->code])
+			printf(": ");
+		printf("%d", n->data.i);
+		break;
+	case UINTCONSTANT:
+		if (token_to_str[n->code])
+			printf(": ");
+		printf("%u", n->data.ui);
+		break;
+	case BOOLCONSTANT:
+		if (token_to_str[n->code])
+			printf(": ");
+		printf("%s", n->data.b ? "true" : "false");
+		break;
+	}
+	printf("\n");
+
+	for (i = 0; i < n->child_count; i++) {
+		traverse_tree((struct glsl_node *)n->children[i], depth + 1);
+	}
+}
+
+int main()
+{
+	glslparse();
+	traverse_tree(g_root, 0);
+}

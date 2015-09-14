@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-struct node {
+struct glsl_node {
 	int code:16;
 	int child_count:16;
 	union {
@@ -14,7 +14,7 @@ struct node {
 		bool b;
 		const char *str;
 	} data;	
-	intptr_t children[1];
+	intptr_t children[];
 };
 
 struct node *new_node(int code, ...) __attribute__ ((sentinel));
