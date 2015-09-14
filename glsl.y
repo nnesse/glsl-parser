@@ -17,7 +17,7 @@ int8_t *buffer = NULL;
 int8_t *buffer_end = NULL;
 int remaining = 0;
 
-struct glsl_node *g_root;
+struct glsl_node *g_glsl_node_root;
 
 static int8_t *glsl_parse_alloc(size_t size, int align)
 {
@@ -713,7 +713,7 @@ const char *token_to_str[4096] = {
 %token NUM_TOKEN
 %%
 
-root			: translation_unit { g_root = $1; }
+root			: translation_unit { g_glsl_node_root = $1; }
 
 translation_unit	: external_declaration { $$ = $1; }
 			| translation_unit external_declaration { $$ = new_glsl_node(TRANSLATION_UNIT, $1, $2, NULL); }
@@ -1336,5 +1336,5 @@ void traverse_tree(struct glsl_node *n, int depth)
 int main()
 {
 	glslparse();
-	traverse_tree(g_root, 0);
+	traverse_tree(g_glsl_node_root, 0);
 }
