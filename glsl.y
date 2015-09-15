@@ -299,10 +299,8 @@ const char *token_to_str[4096] = {
 	[END_DECLARATION] = "END_DECLARATION",
 	[PRECISION_DECLARATION] = "PRECISION_DECLARATION",
 	[BLOCK_DECLARATION] = "BLOCK_DECLARATION",
-	[BLOCK_IDENTIFIER] = "BLOCK_IDENTIFIER",
 	[TYPE_QUALIFIER_DECLARATION] = "TYPE_QUALIFIER_DECLARATION",
 	[IDENTIFIER_LIST] = "IDENTIFIER_LIST",
-	[DECL_IDENTIFIER] = "DECL_IDENTIFIER",
 	[INIT_DECLARATOR_LIST] = "INIT_DECLARATOR_LIST",
 	[FULLY_SPECIFIED_TYPE] = "FULLY_SPECIFIED_TYPE",
 	[SINGLE_DECLARATION] = "SINGLE_DECLARATION",
@@ -318,7 +316,6 @@ const char *token_to_str[4096] = {
 	[CONDITION_OPT] = "CONDITION_OPT",
 	[ASSIGNMENT_CONDITION] = "ASSIGNMENT_CONDITION",
 	[EXPRESSION_CONDITION] = "EXPRESSION_CONDITION",
-	[FUNCTION_PROTOTYPE] = "FUNCTION_PROTOTYPE",
 	[FUNCTION_HEADER] = "FUNCTION_HEADER",
 	[FUNCTION_DECLARATION] = "FUNCTION_DECLARATION",
 	[FUNCTION_PARAMETER_LIST] = "FUNCTION_PARAMETER_LIST",
@@ -330,6 +327,8 @@ const char *token_to_str[4096] = {
 	[STRUCT_DECLARATOR_LIST] = "STRUCT_DECLARATOR_LIST",
 	[STRUCT_DECLARATION_LIST] = "STRUCT_DECLARATION_LIST",
 	[FUNCTION_CALL_PARAMETER_LIST] = "FUNCTION_CALL_PARAMETER_LIST",
+	[LAYOUT_QUALIFIER_ID] = "LAYOUT_QUALIFIER_ID",
+	[LAYOUT_QUALIFIER_ID_LIST] = "LAYOUT_QUALIFIER_ID_LIST",
 	[NUM_TOKEN] = ""
 };
 
@@ -433,16 +432,17 @@ const char *token_to_str[4096] = {
 %type <struct glsl_node *> interpolation_qualifier
 %type <struct glsl_node *> type_name_list
 
-%type <const char *> variable_identifier
+%type <struct glsl_node *> variable_identifier
 %type <struct glsl_node *> decl_identifier
 %type <struct glsl_node *> block_identifier
-%type <const char *> struct_name
-%type <const char *> type_name
-%type <const char *> param_name
-%type <const char *> function_name
+%type <struct glsl_node *> struct_name
+%type <struct glsl_node *> type_name
+%type <struct glsl_node *> param_name
+%type <struct glsl_node *> function_name
 %type <struct glsl_node *> field_selection
-%type <const char *> declaration_tag_identifier
+%type <struct glsl_node *> declaration_tag_identifier
 %type <struct glsl_node *> type_specifier_identifier
+%type <struct glsl_node *> layout_identifier
 
 %type <int> assignment_operator
 %type <int> unary_operator
@@ -678,10 +678,8 @@ const char *token_to_str[4096] = {
 %token END_DECLARATION
 %token PRECISION_DECLARATION
 %token BLOCK_DECLARATION
-%token BLOCK_IDENTIFIER
 %token TYPE_QUALIFIER_DECLARATION
 %token IDENTIFIER_LIST
-%token DECL_IDENTIFIER
 %token INIT_DECLARATOR_LIST
 %token FULLY_SPECIFIED_TYPE
 %token SINGLE_DECLARATION
@@ -697,7 +695,6 @@ const char *token_to_str[4096] = {
 %token CONDITION_OPT
 %token ASSIGNMENT_CONDITION
 %token EXPRESSION_CONDITION
-%token FUNCTION_PROTOTYPE
 %token FUNCTION_HEADER
 %token FUNCTION_DECLARATION
 %token FUNCTION_PARAMETER_LIST
@@ -709,6 +706,8 @@ const char *token_to_str[4096] = {
 %token STRUCT_DECLARATOR_LIST
 %token FUNCTION_CALL_PARAMETER_LIST
 %token STRUCT_DECLARATION_LIST
+%token LAYOUT_QUALIFIER_ID 
+%token LAYOUT_QUALIFIER_ID_LIST 
 
 %token NUM_TOKEN
 %%
@@ -719,31 +718,34 @@ translation_unit	: external_declaration { $$ = $1; }
 			| translation_unit external_declaration { $$ = new_glsl_node(TRANSLATION_UNIT, $1, $2, NULL); }
 			;
 
-block_identifier	: IDENTIFIER { $$ = new_glsl_node(BLOCK_IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
+block_identifier	: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
-decl_identifier		: IDENTIFIER { $$ = new_glsl_node(DECL_IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
+decl_identifier		: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
-struct_name		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
+struct_name		: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
-type_name		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
+type_name		: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
-param_name		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
+param_name		: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
-function_name		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
+function_name		: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
 field_selection		: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
-variable_identifier	: IDENTIFIER { $$ = glsl_parse_strdup($1); }
+variable_identifier	: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
-declaration_tag_identifier : IDENTIFIER { $$ = glsl_parse_strdup($1); }
+layout_identifier	: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
+			;
+
+declaration_tag_identifier : IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
 type_specifier_identifier : IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
@@ -785,8 +787,8 @@ simple_statement	: declaration_statement { $$ = $1; }
 declaration_statement	: declaration { $$ = $1; }
 			;
 
-declaration_tag		: declaration_tag_identifier { $$ = new_glsl_node(DECLARATION_TAG, NULL); $$->data.str = glsl_parse_strdup($1); }
-			| declaration_tag_identifier EQUAL primary_expression { $$ = new_glsl_node(DECLARATION_TAG, $3, NULL); $$->data.str = glsl_parse_strdup($1); }
+declaration_tag		: declaration_tag_identifier { $$ = new_glsl_node(DECLARATION_TAG, $1, NULL); }
+			| declaration_tag_identifier EQUAL primary_expression { $$ = new_glsl_node(DECLARATION_TAG, $1, $3, NULL); }
 			;
 
 declaration_tag_list	: declaration_tag { $$ = $1; }
@@ -804,8 +806,8 @@ declaration		: function_prototype SEMICOLON { $$ = $1; }
 			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier SEMICOLON { $$ = new_glsl_node(BLOCK_DECLARATION, $1, $2, $4, $6, NULL);}
 			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier array_specifier_list SEMICOLON { $$ = new_glsl_node(BLOCK_DECLARATION, $1, $2, $4, $6, $7, NULL);}
 			| type_qualifier SEMICOLON { $$ = new_glsl_node(UNINITIALIZED_DECLARATION, $1, NULL); }
-			| type_qualifier type_name SEMICOLON { $$ = new_glsl_node(UNINITIALIZED_DECLARATION, $1, NULL); $$->data.str = glsl_parse_strdup($2); }
-			| type_qualifier type_name identifier_list SEMICOLON { $$ = new_glsl_node(UNINITIALIZED_DECLARATION, $1, $3, NULL); $$->data.str = glsl_parse_strdup($2); }
+			| type_qualifier type_name SEMICOLON { $$ = new_glsl_node(UNINITIALIZED_DECLARATION, $1, $2, NULL); }
+			| type_qualifier type_name identifier_list SEMICOLON { $$ = new_glsl_node(UNINITIALIZED_DECLARATION, $1, $2, $3, NULL); }
 			;
 
 identifier_list		: COMMA decl_identifier { $$ = $2; }
@@ -886,7 +888,7 @@ jump_statement		: CONTINUE SEMICOLON { $$ = new_glsl_node(CONTINUE, NULL); }
 			| DISCARD SEMICOLON { $$ = new_glsl_node(DISCARD, NULL); }
 			;
 
-function_prototype	: function_declarator RIGHT_PAREN { $$ = new_glsl_node(FUNCTION_PROTOTYPE, $1, NULL); }
+function_prototype	: function_declarator RIGHT_PAREN { $$ = $1; }
 			;
 
 function_declarator	: function_header { $$ = new_glsl_node(FUNCTION_DECLARATION, $1, NULL); }
@@ -903,18 +905,18 @@ parameter_declaration	: type_qualifier parameter_declarator { $$ = new_glsl_node
 			| parameter_type_specifier { $$ = new_glsl_node(PARAMETER_DECLARATION, new_glsl_node(TYPE_QUALIFIER_LIST, NULL), $1, NULL); }
 			;
 
-parameter_declarator	: type_specifier param_name { $$ = new_glsl_node(PARAMETER_DECLARATOR, $1, NULL); $$->data.str = glsl_parse_strdup($2); }
-			| type_specifier param_name array_specifier_list { $$ = new_glsl_node(PARAMETER_DECLARATOR, $1, $3, NULL); $$->data.str = glsl_parse_strdup($2); }
+parameter_declarator	: type_specifier param_name { $$ = new_glsl_node(PARAMETER_DECLARATOR, $1, $2, NULL); }
+			| type_specifier param_name array_specifier_list { $$ = new_glsl_node(PARAMETER_DECLARATOR, $1, $2, $3, NULL);}
 			;
 
-function_header		: fully_specified_type function_name LEFT_PAREN { $$ = new_glsl_node(FUNCTION_HEADER, $1, NULL); $$->data.str = glsl_parse_strdup($2); }
+function_header		: fully_specified_type function_name LEFT_PAREN { $$ = new_glsl_node(FUNCTION_HEADER, $1, $2, NULL); }
 			;
 
 fully_specified_type	: type_specifier { $$ = new_glsl_node(FULLY_SPECIFIED_TYPE, new_glsl_node(TYPE_QUALIFIER_LIST, NULL), $1, NULL); }
 			| type_qualifier type_specifier { $$ = new_glsl_node(FULLY_SPECIFIED_TYPE, $1, $2, NULL); }
 			;
 
-parameter_type_specifier : type_specifier { $$ = new_glsl_node(PARAMETER_DECLARATOR, $1, NULL); $$->data.str = NULL; }
+parameter_type_specifier : type_specifier { $$ = new_glsl_node(PARAMETER_DECLARATOR, $1, NULL); }
 			;
 
 type_specifier		: type_specifier_nonarray { $$ = new_glsl_node(TYPE_SPECIFIER, $1, NULL); }
@@ -1052,8 +1054,8 @@ type_specifier_nonarray : VOID { $$ = new_glsl_node(VOID, NULL); }
 			| type_specifier_identifier { $$ = $1; }
 			;
 
-struct_specifier	: STRUCT struct_name LEFT_BRACE struct_declaration_list RIGHT_BRACE { $$ = new_glsl_node(STRUCT_SPECIFIER, $4, NULL); $$->data.str = glsl_parse_strdup($2); }
-			| STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE { $$ = new_glsl_node(STRUCT_SPECIFIER, $3, NULL); $$->data.str = NULL; }
+struct_specifier	: STRUCT struct_name LEFT_BRACE struct_declaration_list RIGHT_BRACE { $$ = new_glsl_node(STRUCT_SPECIFIER, $2, $4, NULL);}
+			| STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE { struct glsl_node *ident = new_glsl_node(IDENTIFIER, NULL); ident->data.str = NULL; $$ = new_glsl_node(STRUCT_SPECIFIER, ident, $3, NULL); }
 			;
 
 struct_declaration_list : struct_declaration { $$ = $1; }
@@ -1088,11 +1090,11 @@ layout_qualifier	: LAYOUT LEFT_PAREN layout_qualifier_id_list RIGHT_PAREN { $$ =
 			;
 
 layout_qualifier_id_list: layout_qualifier_id { $$ = $1; }
-			| layout_qualifier_id_list COMMA layout_qualifier_id { $$ = new_glsl_node(COMMA, $1, $3, NULL); }
+			| layout_qualifier_id_list COMMA layout_qualifier_id { $$ = new_glsl_node(LAYOUT_QUALIFIER_ID_LIST, $1, $3, NULL); }
 			;
 
-layout_qualifier_id	: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1);}
-			| IDENTIFIER EQUAL constant_expression { $$ = new_glsl_node(IDENTIFIER, $3, NULL); $$->data.str = glsl_parse_strdup($1); }
+layout_qualifier_id	: layout_identifier { $$ = new_glsl_node(LAYOUT_QUALIFIER_ID, $1, NULL); }
+			| layout_identifier EQUAL constant_expression { $$ = new_glsl_node(LAYOUT_QUALIFIER_ID, $1, $3, NULL);}
 			| SHARED { $$ = new_glsl_node(SHARED, NULL); }
 			;
 
@@ -1128,11 +1130,11 @@ storage_qualifier	: CONST { $$ = new_glsl_node(CONST, NULL); }
 			| READONLY { $$ = new_glsl_node(READONLY, NULL); }
 			| WRITEONLY { $$ = new_glsl_node(WRITEONLY, NULL); }
 			| SUBROUTINE { $$ = new_glsl_node(SUBROUTINE, NULL); }
-			| SUBROUTINE LEFT_PAREN type_name_list RIGHT_PAREN  { $$ = new_glsl_node(SUBROUTINE, NULL); }
+			| SUBROUTINE LEFT_PAREN type_name_list RIGHT_PAREN  { $$ = new_glsl_node(SUBROUTINE, new_glsl_node(TYPE_NAME_LIST, $3, NULL), NULL); }
 			;
 
-type_name_list		: type_name { $$ = new_glsl_node(TYPE_NAME_LIST, NULL); $$->data.str = glsl_parse_strdup($1); }
-			| type_name_list COMMA type_name { $$ = new_glsl_node(TYPE_NAME_LIST, $1, NULL); $$->data.str = glsl_parse_strdup($3); }
+type_name_list		: type_name { $$ = $1; }
+			| type_name_list COMMA type_name { $$ = new_glsl_node(TYPE_NAME_LIST, $1, $3, NULL); }
 			;
 
 expression		: assignment_expression { $$ = $1; }
@@ -1256,7 +1258,7 @@ function_identifier	: type_specifier { $$ = $1; }
 			| postfix_expression { $$ = new_glsl_node(POSTFIX_EXPRESSION, $1, NULL); }
 			;
 
-primary_expression	: variable_identifier { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
+primary_expression	: variable_identifier { $$ = $1; }
 			| INTCONSTANT { $$ = new_glsl_node(INTCONSTANT, NULL); $$->data.i = $1; }
 			| UINTCONSTANT { $$ = new_glsl_node(UINTCONSTANT, NULL); $$->data.ui = $1; }
 			| FLOATCONSTANT { $$ = new_glsl_node(FLOATCONSTANT, NULL); $$->data.f = $1; }
@@ -1288,28 +1290,15 @@ bool is_list_node(struct glsl_node *n)
 	}
 }
 
-bool is_string_node(struct glsl_node *n)
-{
-	switch(n->code) {
-	case DOT:
-	case IDENTIFIER:
-	case BLOCK_IDENTIFIER:
-	case STRUCT_SPECIFIER:
-	case FUNCTION_HEADER:
-	case UNINITIALIZED_DECLARATION:
-	case PARAMETER_DECLARATOR:
-	case TYPE_NAME_LIST:
-	case DECLARATION_TAG:
-	case DECL_IDENTIFIER:
-		return true;
-	default:
-		return false;
-	}
-}
-
 void print_tree(struct glsl_node *n, int depth)
 {
 	int i;
+
+	//
+	// Skip printing empty lists
+	//
+	if (is_list_node(n) && n->child_count == 0)
+		return;
 
 	for (i = 0; i < depth; i++) {
 		printf("\t");
@@ -1319,16 +1308,7 @@ void print_tree(struct glsl_node *n, int depth)
 		printf("%s", token_to_str[n->code]);
 
 	switch(n->code) {
-	case DOT:
 	case IDENTIFIER:
-	case BLOCK_IDENTIFIER:
-	case STRUCT_SPECIFIER:
-	case FUNCTION_HEADER:
-	case UNINITIALIZED_DECLARATION:
-	case PARAMETER_DECLARATOR:
-	case TYPE_NAME_LIST:
-	case DECLARATION_TAG:
-	case DECL_IDENTIFIER:
 		if (n->data.str) {
 			if (token_to_str[n->code])
 				printf(": ");
