@@ -440,7 +440,7 @@ const char *token_to_str[4096] = {
 %type <const char *> type_name
 %type <const char *> param_name
 %type <const char *> function_name
-%type <const char *> field_selection
+%type <struct glsl_node *> field_selection
 %type <const char *> declaration_tag_identifier
 %type <struct glsl_node *> type_specifier_identifier
 
@@ -737,7 +737,7 @@ param_name		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
 function_name		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
 			;
 
-field_selection		: IDENTIFIER { $$ = glsl_parse_strdup($1); }
+field_selection		: IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup($1); }
 			;
 
 variable_identifier	: IDENTIFIER { $$ = glsl_parse_strdup($1); }
@@ -1230,7 +1230,7 @@ unary_operator		: PLUS { $$ = PLUS; }
 postfix_expression	: primary_expression { $$ = $1; }
 			| postfix_expression LEFT_BRACKET integer_expression RIGHT_BRACKET { $$ = new_glsl_node(ARRAY_REF_OP, $1, $3, NULL); }
 			| function_call { $$ = $1; }
-			| postfix_expression DOT field_selection { $$ = new_glsl_node(DOT, $1, NULL); $$->data.str = glsl_parse_strdup($3); }
+			| postfix_expression DOT field_selection { $$ = new_glsl_node(DOT, $1, $3, NULL);}
 			| postfix_expression INC_OP { $$ = new_glsl_node(POST_INC_OP, $1, NULL); }
 			| postfix_expression DEC_OP { $$ = new_glsl_node(POST_DEC_OP, $1, NULL); }
 			;
@@ -1267,70 +1267,8 @@ primary_expression	: variable_identifier { $$ = new_glsl_node(IDENTIFIER, NULL);
 
 %%
 
-
-void traverse_tree(struct glsl_node *n, int depth, int list_token)
+bool is_list_node(struct glsl_node *n)
 {
-	int i;
-
-	int next_depth = depth;
-
-	if(n->code != list_token) {
-		for (i = 0; i < depth; i++) {
-			printf("\t");
-		}
-		next_depth++;
-
-		if (token_to_str[n->code])
-			printf("%s", token_to_str[n->code]);
-
-		switch(n->code) {
-		case DOT:
-		case IDENTIFIER:
-		case BLOCK_IDENTIFIER:
-		case STRUCT_SPECIFIER:
-		case FUNCTION_HEADER:
-		case UNINITIALIZED_DECLARATION:
-		case PARAMETER_DECLARATOR:
-		case TYPE_NAME_LIST:
-		case DECLARATION_TAG:
-		case DECL_IDENTIFIER:
-			if (n->data.str) {
-				if (token_to_str[n->code])
-					printf(": ");
-				printf("%s", n->data.str);
-			}
-			break;
-		case FLOATCONSTANT:
-			if (token_to_str[n->code])
-				printf(": ");
-			printf("%f", n->data.f);
-			break;
-		case DOUBLECONSTANT:
-			if (token_to_str[n->code])
-				printf(": ");
-			printf("%f", n->data.d);
-			break;
-		case INTCONSTANT:
-			if (token_to_str[n->code])
-				printf(": ");
-			printf("%d", n->data.i);
-			break;
-		case UINTCONSTANT:
-			if (token_to_str[n->code])
-				printf(": ");
-			printf("%u", n->data.ui);
-			break;
-		case BOOLCONSTANT:
-			if (token_to_str[n->code])
-				printf(": ");
-			printf("%s", n->data.b ? "true" : "false");
-			break;
-		}
-		printf("\n");
-	}
-
-	int next_list_token = list_token;
-
 	switch(n->code) {
 	case TYPE_NAME_LIST:
 	case TYPE_QUALIFIER_LIST:
@@ -1344,17 +1282,157 @@ void traverse_tree(struct glsl_node *n, int depth, int list_token)
 	case STRUCT_DECLARATION_LIST:
 	case TRANSLATION_UNIT:
 	case FUNCTION_CALL_PARAMETER_LIST:
-		next_list_token = n->code;
-		break;
+		return true;
+	default:
+		return false;
+	}
+}
+
+bool is_string_node(struct glsl_node *n)
+{
+	switch(n->code) {
+	case DOT:
+	case IDENTIFIER:
+	case BLOCK_IDENTIFIER:
+	case STRUCT_SPECIFIER:
+	case FUNCTION_HEADER:
+	case UNINITIALIZED_DECLARATION:
+	case PARAMETER_DECLARATOR:
+	case TYPE_NAME_LIST:
+	case DECLARATION_TAG:
+	case DECL_IDENTIFIER:
+		return true;
+	default:
+		return false;
+	}
+}
+
+void print_tree(struct glsl_node *n, int depth)
+{
+	int i;
+
+	for (i = 0; i < depth; i++) {
+		printf("\t");
 	}
 
+	if (token_to_str[n->code])
+		printf("%s", token_to_str[n->code]);
+
+	switch(n->code) {
+	case DOT:
+	case IDENTIFIER:
+	case BLOCK_IDENTIFIER:
+	case STRUCT_SPECIFIER:
+	case FUNCTION_HEADER:
+	case UNINITIALIZED_DECLARATION:
+	case PARAMETER_DECLARATOR:
+	case TYPE_NAME_LIST:
+	case DECLARATION_TAG:
+	case DECL_IDENTIFIER:
+		if (n->data.str) {
+			if (token_to_str[n->code])
+				printf(": ");
+			printf("%s", n->data.str);
+		}
+		break;
+	case FLOATCONSTANT:
+		if (token_to_str[n->code])
+			printf(": ");
+		printf("%f", n->data.f);
+		break;
+	case DOUBLECONSTANT:
+		if (token_to_str[n->code])
+			printf(": ");
+		printf("%f", n->data.d);
+		break;
+	case INTCONSTANT:
+		if (token_to_str[n->code])
+			printf(": ");
+		printf("%d", n->data.i);
+		break;
+	case UINTCONSTANT:
+		if (token_to_str[n->code])
+			printf(": ");
+		printf("%u", n->data.ui);
+		break;
+	case BOOLCONSTANT:
+		if (token_to_str[n->code])
+			printf(": ");
+		printf("%s", n->data.b ? "true" : "false");
+		break;
+	}
+	printf("\n");
+
 	for (i = 0; i < n->child_count; i++) {
-		traverse_tree((struct glsl_node *)n->children[i], next_depth, next_list_token);
+		print_tree((struct glsl_node *)n->children[i], depth + 1);
+	}
+}
+
+int list_length(struct glsl_node *n, int list_token)
+{
+	if (n->code != list_token) {
+		return 1;
+	} else {
+		int i;
+		int count = 0;
+		for (i = 0; i < n->child_count; i++) {
+			count += list_length(n->children[i], list_token);
+		}
+		return count;
+	}
+}
+
+void list_gather(struct glsl_node *n, struct glsl_node *new_list, int list_token)
+{
+	int i;
+	for (i = 0; i < n->child_count; i++) {
+		struct glsl_node *child = n->children[i];
+		if (child->code != list_token)
+			new_list->children[new_list->child_count++] = child;
+		else
+			list_gather(child, new_list, list_token);
+	}
+}
+
+void list_collapse(struct glsl_node *n)
+{
+	int i;
+	for (i = 0; i < n->child_count; i++) {
+		struct glsl_node *child = n->children[i];
+		if (is_list_node(child)) {
+			int list_token = child->code;
+			int length = list_length(child, list_token);
+			struct glsl_node *g = (struct glsl_node *)glsl_parse_alloc(offsetof(struct glsl_node, children[length]), 8);
+			g->code = list_token;
+			g->child_count = 0;
+			list_gather(child, g, list_token);
+			n->children[i] = g;
+			child = g;
+		}
+		list_collapse(child);
 	}
 }
 
 int main()
 {
 	glslparse();
-	traverse_tree(g_glsl_node_root, 0, -1);
+
+	//
+	// list_collapse() can't combine all the TRANSLATION_UNIT nodes
+	// since it would need to replace g_glsl_node_root so we combine
+	// the TRANSLATION_UNIT nodes here.
+	//
+	int length = list_length(g_glsl_node_root, TRANSLATION_UNIT);
+	struct glsl_node *new_root = (struct glsl_node *)glsl_parse_alloc(offsetof(struct glsl_node, children[length]), 8);
+	new_root->code = TRANSLATION_UNIT;
+	new_root->child_count = 0;
+	list_gather(g_glsl_node_root, new_root, TRANSLATION_UNIT);
+	g_glsl_node_root = new_root;
+
+	//
+	// Collapse other list nodes
+	//
+	list_collapse(g_glsl_node_root);
+
+	print_tree(g_glsl_node_root, 0);
 }
