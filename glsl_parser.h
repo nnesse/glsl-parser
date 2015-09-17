@@ -2,6 +2,7 @@
 #define GLSL_COMMON
 
 #include <stdint.h>
+#include <stdbool.h>
 
 //
 // Includes enum glsltokentype contains tokens that can be placed in glsl_node.code

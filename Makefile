@@ -1,4 +1,4 @@
-OBJS=glsl.tab.o lex.glsl.o
+OBJS=glsl.tab.o lex.glsl.o glsl_regen.o glsl_ast.o
 
 all: glsl_parse
 
