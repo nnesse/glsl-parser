@@ -239,8 +239,8 @@ struct			return STRUCT;
 \& return AMPERSAND;
 \? return QUESTION;
 
-true			{ glsllval.BOOLCONSTANT = true; return BOOLCONSTANT; }
-false			{ glsllval.BOOLCONSTANT = false; return BOOLCONSTANT; }
+true			{ return TRUE; }
+false			{ return FALSE; }
 
 {identifier}		{ glsllval.IDENTIFIER = strdup(yytext); return IDENTIFIER; }
 {integer_constant}	{ glsllval.INTCONSTANT = atoi(yytext); return INTCONSTANT; }

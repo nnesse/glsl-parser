@@ -73,6 +73,273 @@ struct glsl_node *new_glsl_node(int code, ...)
 	return g;
 }
 
+const char *code_to_str[4096] = {
+	[CONST] = "CONST",
+	[BOOL] = "BOOL",
+	[FLOAT] = "FLOAT",
+	[DOUBLE] = "DOUBLE",
+	[INT] = "INT",
+	[UINT] = "UINT",
+	[BREAK] = "BREAK",
+	[CONTINUE] = "CONTINUE",
+	[DO] = "DO",
+	[ELSE] = "ELSE",
+	[FOR] = "FOR",
+	[IF] = "IF",
+	[DISCARD] = "DISCARD",
+	[RETURN] = "RETURN",
+	[SWITCH] = "SWITCH",
+	[CASE] = "CASE",
+	[DEFAULT] = "DEFAULT",
+	[SUBROUTINE] = "SUBROUTINE",
+	[BVEC2] = "BVEC2",
+	[BVEC3] = "BVEC3",
+	[BVEC4] = "BVEC4",
+	[IVEC2] = "IVEC2",
+	[IVEC3] = "IVEC3",
+	[IVEC4] = "IVEC4",
+	[UVEC2] = "UVEC2",
+	[UVEC3] = "UVEC3",
+	[UVEC4] = "UVEC4",
+	[VEC2] = "VEC2",
+	[VEC3] = "VEC3",
+	[VEC4] = "VEC4",
+	[MAT2] = "MAT2",
+	[MAT3] = "MAT3",
+	[MAT4] = "MAT4",
+	[CENTROID] = "CENTROID",
+	[IN] = "IN",
+	[OUT] = "OUT",
+	[INOUT] = "INOUT",
+	[UNIFORM] = "UNIFORM",
+	[PATCH] = "PATCH",
+	[SAMPLE] = "SAMPLE",
+	[BUFFER] = "BUFFER",
+	[SHARED] = "SHARED",
+	[COHERENT] = "COHERENT",
+	[VOLATILE] = "VOLATILE",
+	[RESTRICT] = "RESTRICT",
+	[READONLY] = "READONLY",
+	[WRITEONLY] = "WRITEONLY",
+	[DVEC2] = "DVEC2",
+	[DVEC3] = "DVEC3",
+	[DVEC4] = "DVEC4",
+	[DMAT2] = "DMAT2",
+	[DMAT3] = "DMAT3",
+	[DMAT4] = "DMAT4",
+	[NOPERSPECTIVE] = "NOPERSPECTIVE",
+	[FLAT] = "FLAT",
+	[SMOOTH] = "SMOOTH",
+	[LAYOUT] = "LAYOUT",
+	[MAT2X2] = "MAT2X2",
+	[MAT2X3] = "MAT2X3",
+	[MAT2X4] = "MAT2X4",
+	[MAT3X2] = "MAT3X2",
+	[MAT3X3] = "MAT3X3",
+	[MAT3X4] = "MAT3X4",
+	[MAT4X2] = "MAT4X2",
+	[MAT4X3] = "MAT4X3",
+	[MAT4X4] = "MAT4X4",
+	[DMAT2X2] = "DMAT2X2",
+	[DMAT2X3] = "DMAT2X3",
+	[DMAT2X4] = "DMAT2X4",
+	[DMAT3X2] = "DMAT3X2",
+	[DMAT3X3] = "DMAT3X3",
+	[DMAT3X4] = "DMAT3X4",
+	[DMAT4X2] = "DMAT4X2",
+	[DMAT4X3] = "DMAT4X3",
+	[DMAT4X4] = "DMAT4X4",
+	[ATOMIC_UINT] = "ATOMIC_UINT",
+	[SAMPLER1D] = "SAMPLER1D",
+	[SAMPLER2D] = "SAMPLER2D",
+	[SAMPLER3D] = "SAMPLER3D",
+	[SAMPLERCUBE] = "SAMPLERCUBE",
+	[SAMPLER1DSHADOW] = "SAMPLER1DSHADOW",
+	[SAMPLER2DSHADOW] = "SAMPLER2DSHADOW",
+	[SAMPLERCUBESHADOW] = "SAMPLERCUBESHADOW",
+	[SAMPLER1DARRAY] = "SAMPLER1DARRAY",
+	[SAMPLER2DARRAY] = "SAMPLER2DARRAY",
+	[SAMPLER1DARRAYSHADOW] = "SAMPLER1DARRAYSHADOW",
+	[SAMPLER2DARRAYSHADOW] = "SAMPLER2DARRAYSHADOW",
+	[ISAMPLER1D] = "ISAMPLER1D",
+	[ISAMPLER2D] = "ISAMPLER2D",
+	[ISAMPLER3D] = "ISAMPLER3D",
+	[ISAMPLERCUBE] = "ISAMPLERCUBE",
+	[ISAMPLER1DARRAY] = "ISAMPLER1DARRAY",
+	[ISAMPLER2DARRAY] = "ISAMPLER2DARRAY",
+	[USAMPLER1D] = "USAMPLER1D",
+	[USAMPLER2D] = "USAMPLER2D",
+	[USAMPLER3D] = "USAMPLER3D",
+	[USAMPLERCUBE] = "USAMPLERCUBE",
+	[USAMPLER1DARRAY] = "USAMPLER1DARRAY",
+	[USAMPLER2DARRAY] = "USAMPLER2DARRAY",
+	[SAMPLER2DRECT] = "SAMPLER2DRECT",
+	[SAMPLER2DRECTSHADOW] = "SAMPLER2DRECTSHADOW",
+	[ISAMPLER2DRECT] = "ISAMPLER2DRECT",
+	[USAMPLER2DRECT] = "USAMPLER2DRECT",
+	[SAMPLERBUFFER] = "SAMPLERBUFFER",
+	[ISAMPLERBUFFER] = "ISAMPLERBUFFER",
+	[USAMPLERBUFFER] = "USAMPLERBUFFER",
+	[SAMPLERCUBEARRAY] = "SAMPLERCUBEARRAY",
+	[SAMPLERCUBEARRAYSHADOW] = "SAMPLERCUBEARRAYSHADOW",
+	[ISAMPLERCUBEARRAY] = "ISAMPLERCUBEARRAY",
+	[USAMPLERCUBEARRAY] = "USAMPLERCUBEARRAY",
+	[SAMPLER2DMS] = "SAMPLER2DMS",
+	[ISAMPLER2DMS] = "ISAMPLER2DMS",
+	[USAMPLER2DMS] = "USAMPLER2DMS",
+	[SAMPLER2DMSARRAY] = "SAMPLER2DMSARRAY",
+	[ISAMPLER2DMSARRAY] = "ISAMPLER2DMSARRAY",
+	[USAMPLER2DMSARRAY] = "USAMPLER2DMSARRAY",
+	[IMAGE1D] = "IMAGE1D",
+	[IIMAGE1D] = "IIMAGE1D",
+	[UIMAGE1D] = "UIMAGE1D",
+	[IMAGE2D] = "IMAGE2D",
+	[IIMAGE2D] = "IIMAGE2D",
+	[UIMAGE2D] = "UIMAGE2D",
+	[IMAGE3D] = "IMAGE3D",
+	[IIMAGE3D] = "IIMAGE3D",
+	[UIMAGE3D] = "UIMAGE3D",
+	[IMAGE2DRECT] = "IMAGE2DRECT",
+	[IIMAGE2DRECT] = "IIMAGE2DRECT",
+	[UIMAGE2DRECT] = "UIMAGE2DRECT",
+	[IMAGECUBE] = "IMAGECUBE",
+	[IIMAGECUBE] = "IIMAGECUBE",
+	[UIMAGECUBE] = "UIMAGECUBE",
+	[IMAGEBUFFER] = "IMAGEBUFFER",
+	[IIMAGEBUFFER] = "IIMAGEBUFFER",
+	[UIMAGEBUFFER] = "UIMAGEBUFFER",
+	[IMAGE1DARRAY] = "IMAGE1DARRAY",
+	[IIMAGE1DARRAY] = "IIMAGE1DARRAY",
+	[UIMAGE1DARRAY] = "UIMAGE1DARRAY",
+	[IMAGE2DARRAY] = "IMAGE2DARRAY",
+	[IIMAGE2DARRAY] = "IIMAGE2DARRAY",
+	[UIMAGE2DARRAY] = "UIMAGE2DARRAY",
+	[IMAGECUBEARRAY] = "IMAGECUBEARRAY",
+	[IIMAGECUBEARRAY] = "IIMAGECUBEARRAY",
+	[UIMAGECUBEARRAY] = "UIMAGECUBEARRAY",
+	[IMAGE2DMS] = "IMAGE2DMS",
+	[IIMAGE2DMS] = "IIMAGE2DMS",
+	[UIMAGE2DMS] = "UIMAGE2DMS",
+	[IMAGE2DMSARRAY] = "IMAGE2DMSARRAY",
+	[IIMAGE2DMSARRAY] = "IIMAGE2DMSARRAY",
+	[UIMAGE2DMSARRAY] = "UIMAGE2DMSARRAY",
+	[STRUCT] = "STRUCT",
+	[VOID] = "VOID",
+	[WHILE] = "WHILE",
+	[TRUE] = "TRUE",
+	[FALSE] = "FALSE",
+	[LEFT_OP] = "LEFT_OP",
+	[RIGHT_OP] = "RIGHT_OP",
+	[INC_OP] = "INC_OP",
+	[DEC_OP] = "DEC_OP",
+	[LE_OP] = "LE_OP",
+	[GE_OP] = "GE_OP",
+	[EQ_OP] = "EQ_OP",
+	[NE_OP] = "NE_OP",
+	[AND_OP] = "AND_OP",
+	[OR_OP] = "OR_OP",
+	[XOR_OP] = "XOR_OP",
+	[MUL_ASSIGN] = "MUL_ASSIGN",
+	[DIV_ASSIGN] = "DIV_ASSIGN",
+	[ADD_ASSIGN] = "ADD_ASSIGN",
+	[MOD_ASSIGN] = "MOD_ASSIGN",
+	[LEFT_ASSIGN] = "LEFT_ASSIGN",
+	[RIGHT_ASSIGN] = "RIGHT_ASSIGN",
+	[AND_ASSIGN] = "AND_ASSIGN",
+	[XOR_ASSIGN] = "XOR_ASSIGN",
+	[OR_ASSIGN] = "OR_ASSIGN",
+	[SUB_ASSIGN] = "SUB_ASSIGN",
+	[LEFT_PAREN] = "LEFT_PAREN",
+	[RIGHT_PAREN] = "RIGHT_PAREN",
+	[LEFT_BRACKET] = "LEFT_BRACKET",
+	[RIGHT_BRACKET] = "RIGHT_BRACKET",
+	[LEFT_BRACE] = "LEFT_BRACE",
+	[RIGHT_BRACE] = "RIGHT_BRACE",
+	[DOT] = "DOT",
+	[COMMA] = "COMMA",
+	[COLON] = "COLON",
+	[EQUAL] = "EQUAL",
+	[SEMICOLON] = "SEMICOLON",
+	[BANG] = "BANG",
+	[DASH] = "DASH",
+	[TILDE] = "TILDE",
+	[PLUS] = "PLUS",
+	[STAR] = "STAR",
+	[SLASH] = "SLASH",
+	[PERCENT] = "PERCENT",
+	[LEFT_ANGLE] = "LEFT_ANGLE",
+	[RIGHT_ANGLE] = "RIGHT_ANGLE",
+	[VERTICAL_BAR] = "VERTICAL_BAR",
+	[CARET] = "CARET",
+	[AMPERSAND] = "AMPERSAND",
+	[QUESTION] = "QUESTION",
+	[INVARIANT] = "INVARIANT",
+	[PRECISE] = "PRECISE",
+	[HIGHP] = "HIGHP",
+	[MEDIUMP] = "MEDIUMP",
+	[LOWP] = "LOWP",
+	[PRECISION] = "PRECISION",
+	[AT] = "AT",
+
+	[UNARY_PLUS] = "UNARY_PLUS",
+	[UNARY_DASH] = "UNARY_DASH",
+	[PRE_INC_OP] = "PRE_INC_OP",
+	[PRE_DEC_OP] = "PRE_DEC_OP",
+	[POST_DEC_OP] = "POST_DEC_OP",
+	[POST_INC_OP] = "POST_INC_OP",
+	[ARRAY_REF_OP] = "ARRAY_REF_OP",
+	[FUNCTION_CALL] = "FUNCTION_CALL",
+	[TYPE_NAME_LIST] = "TYPE_NAME_LIST",
+	[TYPE_SPECIFIER] = "TYPE_SPECIFIER",
+	[POSTFIX_EXPRESSION] = "POSTFIX_EXPRESSION",
+	[TYPE_QUALIFIER_LIST] = "TYPE_QUALIFIER_LIST",
+	[STRUCT_DECLARATION] = "STRUCT_DECLARATION",
+	[STRUCT_DECLARATOR] = "STRUCT_DECLARATOR",
+	[STRUCT_SPECIFIER] = "STRUCT_SPECIFIER",
+	[FUNCTION_DEFINITION] = "FUNCTION_DEFINITION",
+	[DECLARATION] = "DECLARATION",
+	[STATEMENT_LIST] = "STATEMENT_LIST",
+	[TRANSLATION_UNIT] = "TRANSLATION_UNIT",
+	[DECLARATION_TAG] = "DECLARATION_TAG",
+	[DECLARATION_TAG_LIST] = "DECLARATION_TAG_LIST",
+	[END_DECLARATION] = "END_DECLARATION",
+	[PRECISION_DECLARATION] = "PRECISION_DECLARATION",
+	[BLOCK_DECLARATION] = "BLOCK_DECLARATION",
+	[TYPE_QUALIFIER_DECLARATION] = "TYPE_QUALIFIER_DECLARATION",
+	[IDENTIFIER_LIST] = "IDENTIFIER_LIST",
+	[INIT_DECLARATOR_LIST] = "INIT_DECLARATOR_LIST",
+	[FULLY_SPECIFIED_TYPE] = "FULLY_SPECIFIED_TYPE",
+	[SINGLE_DECLARATION] = "SINGLE_DECLARATION",
+	[INITIALIZER_LIST] = "INITIALIZER_LIST",
+	[EXPRESSION_STATEMENT] = "EXPRESSION_STATEMENT",
+	[SELECTION_STATEMENT] = "SELECTION_STATEMENT",
+	[SWITCH_STATEMENT] = "SWITCH_STATEMENT",
+	[FOR_REST_STATEMENT] = "FOR_REST_STATEMENT",
+	[WHILE_STATEMENT] = "WHILE_STATEMENT",
+	[DO_STATEMENT] = "DO_STATEMENT",
+	[FOR_STATEMENT] = "FOR_STATEMENT",
+	[CASE_LABEL] = "CASE_LABEL",
+	[CONDITION_OPT] = "CONDITION_OPT",
+	[ASSIGNMENT_CONDITION] = "ASSIGNMENT_CONDITION",
+	[EXPRESSION_CONDITION] = "EXPRESSION_CONDITION",
+	[FUNCTION_HEADER] = "FUNCTION_HEADER",
+	[FUNCTION_DECLARATION] = "FUNCTION_DECLARATION",
+	[FUNCTION_PARAMETER_LIST] = "FUNCTION_PARAMETER_LIST",
+	[PARAMETER_DECLARATION] = "PARAMETER_DECLARATION",
+	[PARAMETER_DECLARATOR] = "PARAMETER_DECLARATOR",
+	[UNINITIALIZED_DECLARATION] = "UNINITIALIZED_DECLARATION",
+	[ARRAY_SPECIFIER] = "ARRAY_SPECIFIER",
+	[ARRAY_SPECIFIER_LIST] = "ARRAY_SPECIFIER_LIST",
+	[STRUCT_DECLARATOR_LIST] = "STRUCT_DECLARATOR_LIST",
+	[FUNCTION_CALL_PARAMETER_LIST] = "FUNCTION_CALL_PARAMETER_LIST",
+	[STRUCT_DECLARATION_LIST] = "STRUCT_DECLARATION_LIST",
+	[LAYOUT_QUALIFIER_ID] = "LAYOUT_QUALIFIER_ID",
+	[LAYOUT_QUALIFIER_ID_LIST] = "LAYOUT_QUALIFIER_ID_LIST",
+	[SUBROUTINE_TYPE] = "SUBROUTINE_TYPE",
+	[PAREN_EXPRESSION] = "PAREN_EXPRESSION",
+	[NUM_TOKEN] = ""
+};
+
 const char *token_to_str[4096] = {
 	[CONST] = "const",
 	[BOOL] = "bool",
@@ -88,6 +355,8 @@ const char *token_to_str[4096] = {
 	[IF] = "if",
 	[DISCARD] = "discard",
 	[RETURN] = "return",
+	[TRUE] = "true",
+	[FALSE] = "false",
 	[SWITCH] = "switch",
 	[CASE] = "case",
 	[DEFAULT] = "default",
@@ -228,8 +497,10 @@ const char *token_to_str[4096] = {
 	[WHILE] = "while",
 	[LEFT_OP] = "<<",
 	[RIGHT_OP] = ">>",
-	[INC_OP] = "++",
-	[DEC_OP] = "--",
+	[PRE_INC_OP] = "++",
+	[PRE_DEC_OP] = "--",
+	[POST_INC_OP] = "++",
+	[POST_DEC_OP] = "--",
 	[LE_OP] = "<=",
 	[GE_OP] = ">=",
 	[EQ_OP] = "==",
@@ -278,57 +549,6 @@ const char *token_to_str[4096] = {
 	[LOWP] = "lowp",
 	[PRECISION] = "precision",
 	[AT] = "@",
-	[TRANSLATION_UNIT] = "TRANSLATION_UNIT",
-	[POST_INC_OP] = "POST_INC_OP",
-	[POST_DEC_OP] = "POST_DEC_OP",
-	[ARRAY_REF_OP] = "ARRAY_REF_OP",
-	[FUNCTION_CALL] = "FUNCTION_CALL",
-	[TYPE_NAME_LIST] = "TYPE_NAME_LIST",
-	[TYPE_SPECIFIER] = "TYPE_SPECIFIER",
-	[POSTFIX_EXPRESSION] = "POSTFIX_EXPRESSION",
-	[TYPE_QUALIFIER_LIST] = "TYPE_QUALIFIER_LIST",
-	[STRUCT_DECLARATION] = "STRUCT_DECLARATION",
-	[STRUCT_DECLARATOR] = "STRUCT_DECLARATOR",
-	[STRUCT_SPECIFIER] = "STRUCT_SPECIFIER",
-	[FUNCTION_DEFINITION] = "FUNCTION_DEFINITION",
-	[DECLARATION] = "DECLARATION",
-	[STATEMENT_LIST] = "STATEMENT_LIST",
-	[TRANSLATION_UNIT] = "TRANSLATION_UNIT",
-	[DECLARATION_TAG] = "DECLARATION_TAG",
-	[DECLARATION_TAG_LIST] = "DECLARATION_TAG_LIST",
-	[END_DECLARATION] = "END_DECLARATION",
-	[PRECISION_DECLARATION] = "PRECISION_DECLARATION",
-	[BLOCK_DECLARATION] = "BLOCK_DECLARATION",
-	[TYPE_QUALIFIER_DECLARATION] = "TYPE_QUALIFIER_DECLARATION",
-	[IDENTIFIER_LIST] = "IDENTIFIER_LIST",
-	[INIT_DECLARATOR_LIST] = "INIT_DECLARATOR_LIST",
-	[FULLY_SPECIFIED_TYPE] = "FULLY_SPECIFIED_TYPE",
-	[SINGLE_DECLARATION] = "SINGLE_DECLARATION",
-	[INITIALIZER_LIST] = "INITIALIZER_LIST",
-	[EXPRESSION_STATEMENT] = "EXPRESSION_STATEMENT",
-	[SELECTION_STATEMENT] = "SELECTION_STATEMENT",
-	[SWITCH_STATEMENT] = "SWITCH_STATEMENT",
-	[FOR_REST_STATEMENT] = "FOR_REST_STATEMENT",
-	[WHILE_STATEMENT] = "WHILE_STATEMENT",
-	[DO_STATEMENT] = "DO_STATEMENT",
-	[FOR_STATEMENT] = "FOR_STATEMENT",
-	[CASE_LABEL] = "CASE_LABEL",
-	[CONDITION_OPT] = "CONDITION_OPT",
-	[ASSIGNMENT_CONDITION] = "ASSIGNMENT_CONDITION",
-	[EXPRESSION_CONDITION] = "EXPRESSION_CONDITION",
-	[FUNCTION_HEADER] = "FUNCTION_HEADER",
-	[FUNCTION_DECLARATION] = "FUNCTION_DECLARATION",
-	[FUNCTION_PARAMETER_LIST] = "FUNCTION_PARAMETER_LIST",
-	[PARAMETER_DECLARATION] = "PARAMETER_DECLARATION",
-	[PARAMETER_DECLARATOR] = "PARAMETER_DECLARATOR",
-	[UNINITIALIZED_DECLARATION] = "UNINITIALIZED_DECLARATION",
-	[ARRAY_SPECIFIER] = "ARRAY_SPECIFIER",
-	[ARRAY_SPECIFIER_LIST] = "ARRAY_SPECIFIER_LIST",
-	[STRUCT_DECLARATOR_LIST] = "STRUCT_DECLARATOR_LIST",
-	[STRUCT_DECLARATION_LIST] = "STRUCT_DECLARATION_LIST",
-	[FUNCTION_CALL_PARAMETER_LIST] = "FUNCTION_CALL_PARAMETER_LIST",
-	[LAYOUT_QUALIFIER_ID] = "LAYOUT_QUALIFIER_ID",
-	[LAYOUT_QUALIFIER_ID_LIST] = "LAYOUT_QUALIFIER_ID_LIST",
 	[NUM_TOKEN] = ""
 };
 
@@ -604,7 +824,8 @@ const char *token_to_str[4096] = {
 %token <double> DOUBLECONSTANT
 %token <int> INTCONSTANT
 %token <unsigned int> UINTCONSTANT
-%token <bool> BOOLCONSTANT
+%token TRUE
+%token FALSE
 %token LEFT_OP
 %token RIGHT_OP
 %token INC_OP
@@ -658,8 +879,12 @@ const char *token_to_str[4096] = {
 %token PRECISION
 %token AT
 
-%token POST_INC_OP
+%token UNARY_PLUS
+%token UNARY_DASH
+%token PRE_INC_OP
+%token PRE_DEC_OP
 %token POST_DEC_OP
+%token POST_INC_OP
 %token ARRAY_REF_OP
 %token FUNCTION_CALL
 %token TYPE_NAME_LIST
@@ -706,8 +931,10 @@ const char *token_to_str[4096] = {
 %token STRUCT_DECLARATOR_LIST
 %token FUNCTION_CALL_PARAMETER_LIST
 %token STRUCT_DECLARATION_LIST
-%token LAYOUT_QUALIFIER_ID 
-%token LAYOUT_QUALIFIER_ID_LIST 
+%token LAYOUT_QUALIFIER_ID
+%token LAYOUT_QUALIFIER_ID_LIST
+%token SUBROUTINE_TYPE
+%token PAREN_EXPRESSION
 
 %token NUM_TOKEN
 %%
@@ -756,7 +983,7 @@ external_declaration	: function_definition { $$ = $1; }
 			;
 
 function_definition	: function_prototype compound_statement_no_new_scope { $$ = new_glsl_node(FUNCTION_DEFINITION, $1, $2, NULL); }
-			| function_prototype { $$ = new_glsl_node(FUNCTION_DEFINITION,$1, NULL); }
+			| function_prototype { $$ = new_glsl_node(FUNCTION_DEFINITION,$1, new_glsl_node(STATEMENT_LIST, NULL), NULL); }
 			;
 
 compound_statement_no_new_scope : LEFT_BRACE RIGHT_BRACE { $$ = new_glsl_node(STATEMENT_LIST, NULL); }
@@ -767,7 +994,7 @@ statement		: compound_statement { $$ = $1; }
 			| simple_statement { $$ = $1; }
 			;
 
-statement_list		: statement { $$ = $1; }
+statement_list		: statement { $$ = new_glsl_node(STATEMENT_LIST, $1, NULL); }
 			| statement_list statement { $$ = new_glsl_node(STATEMENT_LIST, $1, $2, NULL); }
 			;
 
@@ -895,7 +1122,7 @@ function_declarator	: function_header { $$ = new_glsl_node(FUNCTION_DECLARATION,
 			| function_header function_parameter_list { $$ = new_glsl_node(FUNCTION_DECLARATION, $1, $2, NULL); }
 			;
 
-function_parameter_list : parameter_declaration { $$ = $1; }
+function_parameter_list : parameter_declaration { $$ = new_glsl_node(FUNCTION_PARAMETER_LIST, $1, NULL); }
 			| function_parameter_list COMMA parameter_declaration { $$ = new_glsl_node(FUNCTION_PARAMETER_LIST, $1, $3, NULL); }
 			;
 
@@ -919,11 +1146,11 @@ fully_specified_type	: type_specifier { $$ = new_glsl_node(FULLY_SPECIFIED_TYPE,
 parameter_type_specifier : type_specifier { $$ = new_glsl_node(PARAMETER_DECLARATOR, $1, NULL); }
 			;
 
-type_specifier		: type_specifier_nonarray { $$ = new_glsl_node(TYPE_SPECIFIER, $1, NULL); }
-			| type_specifier_nonarray array_specifier { $$ = new_glsl_node(TYPE_SPECIFIER, $1, $2, NULL); }
+type_specifier		: type_specifier_nonarray { $$ = new_glsl_node(TYPE_SPECIFIER, $1, new_glsl_node(ARRAY_SPECIFIER_LIST, NULL), NULL); }
+			| type_specifier_nonarray array_specifier_list { $$ = new_glsl_node(TYPE_SPECIFIER, $1, $2, NULL); }
 			;
 
-array_specifier_list	: array_specifier { $$ = $1; }
+array_specifier_list	: array_specifier { $$ = new_glsl_node(ARRAY_SPECIFIER_LIST, $1, NULL); }
 		     	| array_specifier_list array_specifier { $$ = new_glsl_node(ARRAY_SPECIFIER_LIST, $1, $2, NULL); }
 			;
 
@@ -1086,7 +1313,7 @@ single_type_qualifier	: storage_qualifier { $$ = $1; }
 			| precise_qualifier { $$ = $1; }
 			;
 
-layout_qualifier	: LAYOUT LEFT_PAREN layout_qualifier_id_list RIGHT_PAREN { $$ = new_glsl_node(LAYOUT, $3, NULL); }
+layout_qualifier	: LAYOUT LEFT_PAREN layout_qualifier_id_list RIGHT_PAREN { $$ = $3; }
 			;
 
 layout_qualifier_id_list: layout_qualifier_id { $$ = $1; }
@@ -1130,7 +1357,7 @@ storage_qualifier	: CONST { $$ = new_glsl_node(CONST, NULL); }
 			| READONLY { $$ = new_glsl_node(READONLY, NULL); }
 			| WRITEONLY { $$ = new_glsl_node(WRITEONLY, NULL); }
 			| SUBROUTINE { $$ = new_glsl_node(SUBROUTINE, NULL); }
-			| SUBROUTINE LEFT_PAREN type_name_list RIGHT_PAREN  { $$ = new_glsl_node(SUBROUTINE, new_glsl_node(TYPE_NAME_LIST, $3, NULL), NULL); }
+			| SUBROUTINE LEFT_PAREN type_name_list RIGHT_PAREN  { $$ = new_glsl_node(SUBROUTINE_TYPE, new_glsl_node(TYPE_NAME_LIST, $3, NULL), NULL); }
 			;
 
 type_name_list		: type_name { $$ = $1; }
@@ -1218,13 +1445,13 @@ multiplicative_expression : unary_expression { $$ = $1; }
 			;
 
 unary_expression	: postfix_expression { $$ = $1; }
-			| INC_OP unary_expression { $$ = new_glsl_node(INC_OP, $2, NULL); }
-			| DEC_OP unary_expression { $$ = new_glsl_node(DEC_OP, $2, NULL); }
+			| INC_OP unary_expression { $$ = new_glsl_node(PRE_INC_OP, $2, NULL); }
+			| DEC_OP unary_expression { $$ = new_glsl_node(PRE_DEC_OP, $2, NULL); }
 			| unary_operator unary_expression { $$ = new_glsl_node($1, $2, NULL); }
 			;
 
-unary_operator		: PLUS { $$ = PLUS; }
-			| DASH { $$ = DASH; }
+unary_operator		: PLUS { $$ = UNARY_PLUS; }
+			| DASH { $$ = UNARY_DASH; }
 			| BANG { $$ = BANG; }
 			| TILDE { $$ = TILDE; }
 			;
@@ -1262,9 +1489,10 @@ primary_expression	: variable_identifier { $$ = $1; }
 			| INTCONSTANT { $$ = new_glsl_node(INTCONSTANT, NULL); $$->data.i = $1; }
 			| UINTCONSTANT { $$ = new_glsl_node(UINTCONSTANT, NULL); $$->data.ui = $1; }
 			| FLOATCONSTANT { $$ = new_glsl_node(FLOATCONSTANT, NULL); $$->data.f = $1; }
-			| BOOLCONSTANT { $$ = new_glsl_node(BOOLCONSTANT, NULL); $$->data.b = $1; }
+			| TRUE { $$ = new_glsl_node(TRUE, NULL); }
+			| FALSE { $$ = new_glsl_node(FALSE, NULL); }
 			| DOUBLECONSTANT { $$ = new_glsl_node(DOUBLECONSTANT, NULL); $$->data.d = $1; }
-			| LEFT_PAREN expression RIGHT_PAREN { $$ = $2; }
+			| LEFT_PAREN expression RIGHT_PAREN { $$ = new_glsl_node(PAREN_EXPRESSION, $2, NULL); }
 			;
 
 %%
@@ -1304,41 +1532,36 @@ void print_tree(struct glsl_node *n, int depth)
 		printf("\t");
 	}
 
-	if (token_to_str[n->code])
-		printf("%s", token_to_str[n->code]);
+	if (code_to_str[n->code])
+		printf("%s", code_to_str[n->code]);
 
 	switch(n->code) {
 	case IDENTIFIER:
 		if (n->data.str) {
-			if (token_to_str[n->code])
+			if (code_to_str[n->code])
 				printf(": ");
 			printf("%s", n->data.str);
 		}
 		break;
 	case FLOATCONSTANT:
-		if (token_to_str[n->code])
+		if (code_to_str[n->code])
 			printf(": ");
 		printf("%f", n->data.f);
 		break;
 	case DOUBLECONSTANT:
-		if (token_to_str[n->code])
+		if (code_to_str[n->code])
 			printf(": ");
 		printf("%f", n->data.d);
 		break;
 	case INTCONSTANT:
-		if (token_to_str[n->code])
+		if (code_to_str[n->code])
 			printf(": ");
 		printf("%d", n->data.i);
 		break;
 	case UINTCONSTANT:
-		if (token_to_str[n->code])
+		if (code_to_str[n->code])
 			printf(": ");
 		printf("%u", n->data.ui);
-		break;
-	case BOOLCONSTANT:
-		if (token_to_str[n->code])
-			printf(": ");
-		printf("%s", n->data.b ? "true" : "false");
 		break;
 	}
 	printf("\n");
@@ -1374,6 +1597,8 @@ void list_gather(struct glsl_node *n, struct glsl_node *new_list, int list_token
 	}
 }
 
+#include <assert.h>
+
 void list_collapse(struct glsl_node *n)
 {
 	int i;
@@ -1393,26 +1618,272 @@ void list_collapse(struct glsl_node *n)
 	}
 }
 
+/*
+
+AST structure (incomplete)
+
+AST node description:
+
+Each node type is described as a node type code, followed by a colon, followed by a list of possible child nodes
+in order.
+
+* Nodes surrounded by brackets are optional
+
+* (A | B | C ...) denotes that a node may have type A, B, or C
+
+* Labels in lowercase have no type codes and should define "|" lists only
+
+AST node types:
+
+FUNCTION_DEFINITION: FUNCTION_DECLARATION STATEMENT_LIST
+
+FUNCTION_DECLARATION: FUNCTION_HEADER FUNCTION_PARAMETER_LIST
+
+FUNCTION_HEADER: FULLY_SPECIFIED_TYPE IDENTIFIER
+
+FUNCTION_PARAMETER_LIST: PARAMETER_DECLARATOR ...
+
+PARAMETER_DECLARATION: TYPE_QUALIFIER_LIST PARAMETER_DECLARATOR
+
+FULLY_SPECIFIED_TYPE: TYPE_QUALIFIER_LIST TYPE_SPECIFIER
+
+TYPE_SPECIFIER: type_token | STRUCT_SPECIFIER | IDENTIFIER
+
+STRUCT_SPECIFIER: IDENTIFIER (STRUCT_DECLARATION_LIST | STRUCT_DECLARATION)
+
+STRUCT_DECLARATION_LIST: STRUCT_DECLARATION
+
+STRUCT_DECLARATION: TYPE_QUALIFIER_LIST TYPE_SPECIFIER (STRUCT_DECLARATOR_LIST | STRUCT_DECLARATOR)
+
+STRUCT_DECLARATOR_LIST: STRUCT_DECLARATOR ...
+
+STRUCT_DECLARATOR: IDENTIFIER ARRAY_SPECIFIER_LIST
+
+type_token: VOID | FLOAT | DOUBLE | INT | UINT | BOOL
+	| VEC2 | VEC3 | VEC4
+	| DVEC2 | DVEC3 | DVEC4
+	| BVEC2 | BVEC3 | BVEC4
+	| IVEC2 | IVEC3 | IVEC4
+	| UVEC2 | UVEC3 | UVEC4
+	| MAT2 | MAT3 | MAT4
+	| MAT2X2 | MAT2X3 | MAT2X4 | MAT3X2 | MAT3X3 | MAT3X4 | MAT4X2 | MAT4X3 | MAT4X4
+	| DMAT2 | DMAT3 | DMAT4 | DMAT2X2
+	| DMAT2X3 | DMAT2X4 | DMAT3X2 | DMAT3X3 | DMAT3X4 | DMAT4X2 | DMAT4X3 | DMAT4X4
+	| ATOMIC_UINT
+	| SAMPLER1D | SAMPLER2D | SAMPLER3D
+	| SAMPLERCUBE
+	| SAMPLER1DSHADOW | SAMPLER2DSHADOW | SAMPLERCUBESHADOW
+	| SAMPLER1DARRAY | SAMPLER2DARRAY
+	| SAMPLER1DARRAYSHADOW | SAMPLER2DARRAYSHADOW
+	| SAMPLERCUBEARRAY | SAMPLERCUBEARRAYSHADOW
+	| ISAMPLER1D | ISAMPLER2D | ISAMPLER3D
+	| ISAMPLERCUBE
+	| ISAMPLER1DARRAY | ISAMPLER2DARRAY | ISAMPLERCUBEARRAY
+	| USAMPLER1D | USAMPLER2D | USAMPLER3D
+	| USAMPLERCUBE | USAMPLER1DARRAY
+	| USAMPLER2DARRAY | USAMPLERCUBEARRAY | SAMPLER2DRECT
+	| SAMPLER2DRECTSHADOW | ISAMPLER2DRECT | USAMPLER2DRECT
+	| SAMPLERBUFFER | ISAMPLERBUFFER | USAMPLERBUFFER
+	| SAMPLER2DMS | ISAMPLER2DMS | USAMPLER2DMS
+	| SAMPLER2DMSARRAY | ISAMPLER2DMSARRAY | USAMPLER2DMSARRAY
+	| IMAGE1D | IIMAGE1D | UIMAGE1D | IMAGE2D | IIMAGE2D | UIMAGE2D | IMAGE3D | IIMAGE3D | UIMAGE3D
+	| IMAGE2DRECT | IIMAGE2DRECT | UIMAGE2DRECT
+	| IMAGECUBE | IIMAGECUBE | UIMAGECUBE
+	| IMAGEBUFFER | IIMAGEBUFFER | UIMAGEBUFFER
+	| IMAGE1DARRAY | IIMAGE1DARRAY | UIMAGE1DARRAY | IMAGE2DARRAY | IIMAGE2DARRAY | UIMAGE2DARRAY | IMAGECUBEARRAY | IIMAGECUBEARRAY | UIMAGECUBEARRAY
+	| IMAGE2DMS | IIMAGE2DMS | UIMAGE2DMS
+	| IMAGE2DMSARRAY | IIMAGE2DMSARRAY | UIMAGE2DMSARRAY
+
+PARAMETER_DECLARATOR: TYPE_SPECIFIER IDENTIFIER ARRAY_SPECIFIER_LIST
+
+TYPE_QUALIFIER_LIST: ( LAYOUT_QUALIFIER_ID_LIST | HIGHP | MEDIUMP | LOWP | SMOOTH | FLAT| NOPERSPECTIVE | INVARIANT | PRECISE | storage_qualifier) ...
+
+storage_qualifier: CONST | INOUT | IN | OUT | CENTROID | PATCH | SAMPLE | UNIFORM | BUFFER | SHARED |
+	COHERENT | VOLATILE | RESTRICT | READONLY | WRITEONLY |
+	SUBROUTINE | SUBROUTINE_TYPE
+
+SUBROUTINE_TYPE: TYPE_NAME_LIST | IDENTIFIER
+
+TYPE_NAME_LIST: IDENTIFIER ...
+
+LAYOUT_QUALIFIER_ID_LIST: (LAYOUT_QUALIFIER_ID | SHARED ) ...
+
+LAYOUT_QUALIFIER_ID: (TODO)
+
+STATEMENT_LIST: statement ...
+
+statement: (TODO)
+
+*/
+
+void print_node_as_glsl(struct glsl_node *n, int depth);
+
+bool is_optional_list(struct glsl_node *n)
+{
+	switch(n->code) {
+	case ARRAY_SPECIFIER_LIST:
+	case TYPE_QUALIFIER_LIST:
+		return true;
+	}
+	return false;
+}
+
+void print_list_as_glsl(struct glsl_node *n, const char *prefix, const char *delim, const char *postfix, int depth)
+{
+	int i;
+	printf("%s", prefix);
+	for (i = 0; i < n->child_count; i++) {
+		if (n->children[i]->child_count || !is_optional_list(n->children[i])) {
+			print_node_as_glsl(n->children[i], depth);
+			if ((i < n->child_count - 1))
+				printf("%s", delim);
+		}
+	}
+	printf("%s", postfix);
+}
+
+void print_node_as_glsl(struct glsl_node *n, int depth)
+{
+	int i, j;
+	switch(n->code) {
+	case IDENTIFIER:
+		printf("%s", n->data.str);
+		break;
+	case FLOATCONSTANT:
+		printf("%f", n->data.f);
+		break;
+	case DOUBLECONSTANT:
+		printf("%f", n->data.d);
+		break;
+	case INTCONSTANT:
+		printf("%d", n->data.i);
+		break;
+	case UINTCONSTANT:
+		printf("%u", n->data.ui);
+		break;
+	case TRANSLATION_UNIT:
+	case ARRAY_SPECIFIER_LIST:
+		print_list_as_glsl(n, "", "", "", depth);
+		break;
+	case ARRAY_SPECIFIER:
+		print_list_as_glsl(n, "[", "", "]", depth);
+		break;
+	case EQUAL:
+	case MUL_ASSIGN:
+	case DIV_ASSIGN:
+	case MOD_ASSIGN:
+	case ADD_ASSIGN:
+	case SUB_ASSIGN:
+	case LEFT_ASSIGN:
+	case RIGHT_ASSIGN:
+	case AND_ASSIGN:
+	case XOR_ASSIGN:
+	case OR_ASSIGN:
+	case PLUS:
+	case DASH:
+	case STAR:
+	case SLASH:
+	case PERCENT:
+	case AMPERSAND:
+	case EQ_OP:
+	case NE_OP:
+	case LEFT_ANGLE:
+	case RIGHT_ANGLE:
+	case LE_OP:
+	case GE_OP:
+	case LEFT_OP:
+	case RIGHT_OP:
+	case CARET:
+	case VERTICAL_BAR:
+	case AND_OP:
+	case OR_OP:
+	case XOR_OP:
+	case DOT:
+		print_list_as_glsl(n, "", token_to_str[n->code], "", depth);
+		break;
+	case PRE_INC_OP:
+	case PRE_DEC_OP:
+	case UNARY_PLUS:
+	case UNARY_DASH:
+	case TILDE:
+	case BANG:
+		print_list_as_glsl(n, token_to_str[n->code], "", "", depth);
+		break;
+	case PAREN_EXPRESSION:
+		print_list_as_glsl(n, "(", "", ")", depth);
+		break;
+	case POST_INC_OP:
+	case POST_DEC_OP:
+		print_list_as_glsl(n, "", "", token_to_str[n->code], depth);
+		break;
+	case FUNCTION_DECLARATION:
+	case FUNCTION_DEFINITION:
+	case FUNCTION_HEADER:
+	case FULLY_SPECIFIED_TYPE:
+	case PARAMETER_DECLARATION:
+	case PARAMETER_DECLARATOR:
+		print_list_as_glsl(n, "", " ", "", depth);
+		break;
+	case STATEMENT_LIST:
+		printf("{\n");
+		depth++;
+		for (i = 0; i < n->child_count; i++) {
+			for (j = 0; j < depth; j++) {
+				printf("\t");
+			}
+			print_node_as_glsl(n->children[i], depth);
+			printf(";\n");
+		}
+		printf("}\n");
+		break;
+	case FUNCTION_PARAMETER_LIST:
+		print_list_as_glsl(n, "(", ", ", ")", depth);
+		break;
+	case TYPE_QUALIFIER_LIST:
+		print_list_as_glsl(n, "", " ", "", depth);
+		break;
+	case TYPE_SPECIFIER:
+	case EXPRESSION_STATEMENT:
+		print_list_as_glsl(n, "", "", "", depth);
+		break;
+	default:
+		if (token_to_str[n->code])
+			printf("%s", token_to_str[n->code]);
+		else
+			printf("<unknown token %d>", n->code);
+		break;
+	}
+}
+
 int main()
 {
 	glslparse();
 
-	//
-	// list_collapse() can't combine all the TRANSLATION_UNIT nodes
-	// since it would need to replace g_glsl_node_root so we combine
-	// the TRANSLATION_UNIT nodes here.
-	//
-	int length = list_length(g_glsl_node_root, TRANSLATION_UNIT);
-	struct glsl_node *new_root = (struct glsl_node *)glsl_parse_alloc(offsetof(struct glsl_node, children[length]), 8);
-	new_root->code = TRANSLATION_UNIT;
-	new_root->child_count = 0;
-	list_gather(g_glsl_node_root, new_root, TRANSLATION_UNIT);
-	g_glsl_node_root = new_root;
+	if (g_glsl_node_root) {
+		if (is_list_node(g_glsl_node_root)) {
+			//
+			// list_collapse() can't combine all the TRANSLATION_UNIT nodes
+			// since it would need to replace g_glsl_node_root so we combine
+			// the TRANSLATION_UNIT nodes here.
+			//
+			int length = list_length(g_glsl_node_root, TRANSLATION_UNIT);
+			struct glsl_node *new_root = (struct glsl_node *)glsl_parse_alloc(offsetof(struct glsl_node, children[length]), 8);
+			new_root->code = TRANSLATION_UNIT;
+			new_root->child_count = 0;
+			list_gather(g_glsl_node_root, new_root, TRANSLATION_UNIT);
+			assert(new_root->child_count == length);
+			g_glsl_node_root = new_root;
+		}
+		//
+		// Collapse other list nodes
+		//
+		list_collapse(g_glsl_node_root);
 
-	//
-	// Collapse other list nodes
-	//
-	list_collapse(g_glsl_node_root);
+		printf("\nAST tree:\n\n");
+		print_tree(g_glsl_node_root, 0);
 
-	print_tree(g_glsl_node_root, 0);
+		printf("\nRegenerated GLSL:\n\n");
+		print_node_as_glsl(g_glsl_node_root, 0);
+	}
 }
+
