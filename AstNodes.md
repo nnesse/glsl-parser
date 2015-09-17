@@ -42,7 +42,7 @@ AST node types (incomplete)
 	                        | MAT2X2 | MAT2X3 | MAT2X4
 	                        | MAT3X2 | MAT3X3 | MAT3X4
 	                        | MAT4X2 | MAT4X3 | MAT4X4
-	                        | DMAT2 | DMAT3 | DMAT4 
+	                        | DMAT2 | DMAT3 | DMAT4
 	                        | DMAT2X2 | DMAT2X3 | DMAT2X4
 	                        | DMAT3X2 | DMAT3X3 | DMAT3X4
 	                        | DMAT4X2 | DMAT4X3 | DMAT4X4
@@ -97,5 +97,9 @@ AST node types (incomplete)
 	LAYOUT_QUALIFIER_ID     : (TODO)
 
 	STATEMENT_LIST          : statement ...
+
+	SINGLE_DECLARATION      : FULLY_SPECIFIED_TYPE IDENTIFIER ARRAY_SPECIFIER_LIST
+
+	SINGLE_INIT_DECLARATION : FULLY_SPECIFIED_TYPE IDENTIFIER ARRAY_SPECIFIER_LIST INITIALIZER
 
 	statement               : (TODO)
