@@ -95,6 +95,7 @@ const char *code_to_str[4096] = {
 	[IF] = "IF",
 	[DISCARD] = "DISCARD",
 	[RETURN] = "RETURN",
+	[RETURN_VALUE] = "RETURN_VALUE",
 	[SWITCH] = "SWITCH",
 	[CASE] = "CASE",
 	[DEFAULT] = "DEFAULT",
@@ -321,6 +322,7 @@ const char *code_to_str[4096] = {
 	[INITIALIZER_LIST] = "INITIALIZER_LIST",
 	[EXPRESSION_STATEMENT] = "EXPRESSION_STATEMENT",
 	[SELECTION_STATEMENT] = "SELECTION_STATEMENT",
+	[SELECTION_STATEMENT_ELSE] = "SELECTION_STATEMENT_ELSE",
 	[SWITCH_STATEMENT] = "SWITCH_STATEMENT",
 	[FOR_REST_STATEMENT] = "FOR_REST_STATEMENT",
 	[WHILE_STATEMENT] = "WHILE_STATEMENT",
@@ -689,6 +691,7 @@ const char *token_to_str[4096] = {
 %token IF
 %token DISCARD
 %token RETURN
+%token RETURN_VALUE
 %token SWITCH
 %token CASE
 %token DEFAULT
@@ -920,6 +923,7 @@ const char *token_to_str[4096] = {
 %token INITIALIZER_LIST
 %token EXPRESSION_STATEMENT
 %token SELECTION_STATEMENT
+%token SELECTION_STATEMENT_ELSE
 %token SWITCH_STATEMENT
 %token FOR_REST_STATEMENT
 %token WHILE_STATEMENT
@@ -1038,8 +1042,8 @@ end_declaration		: AT declaration_tag_list AT SEMICOLON { $$ = new_glsl_node(END
 declaration		: function_prototype SEMICOLON { $$ = $1; }
 			| init_declarator_list end_declaration { $$ = $1; }
 			| PRECISION precision_qualifier type_specifier SEMICOLON { $$ = new_glsl_node(PRECISION_DECLARATION, $2, $3, NULL); }
-			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE SEMICOLON { $$ = new_glsl_node(BLOCK_DECLARATION, $1, $2, $4, NULL);}
-			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier SEMICOLON { $$ = new_glsl_node(BLOCK_DECLARATION, $1, $2, $4, $6, NULL);}
+			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE SEMICOLON { $$ = new_glsl_node(BLOCK_DECLARATION, $1, $2, $4, new_null_glsl_identifier(), new_glsl_node(ARRAY_SPECIFIER_LIST, NULL), NULL);}
+			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier SEMICOLON { $$ = new_glsl_node(BLOCK_DECLARATION, $1, $2, $4, $6, new_glsl_node(ARRAY_SPECIFIER_LIST, NULL), NULL);}
 			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier array_specifier_list SEMICOLON { $$ = new_glsl_node(BLOCK_DECLARATION, $1, $2, $4, $6, $7, NULL);}
 			| type_qualifier SEMICOLON { $$ = new_glsl_node(UNINITIALIZED_DECLARATION, $1, NULL); }
 			| type_qualifier type_name SEMICOLON { $$ = new_glsl_node(UNINITIALIZED_DECLARATION, $1, $2, NULL); }
@@ -1078,7 +1082,7 @@ expression_statement	: SEMICOLON { $$ = new_glsl_node(EXPRESSION_STATEMENT, NULL
 			;
 
 selection_statement	: IF LEFT_PAREN expression RIGHT_PAREN statement { $$ = new_glsl_node(SELECTION_STATEMENT, $3, $5, NULL); }
-			| IF LEFT_PAREN expression RIGHT_PAREN statement ELSE statement { $$ = new_glsl_node(SELECTION_STATEMENT, $3, $5, $7, NULL); }
+			| IF LEFT_PAREN expression RIGHT_PAREN statement ELSE statement { $$ = new_glsl_node(SELECTION_STATEMENT_ELSE, $3, $5, $7, NULL); }
 			;
 
 switch_statement	: SWITCH LEFT_PAREN expression RIGHT_PAREN LEFT_BRACE switch_statement_list RIGHT_BRACE { $$ = new_glsl_node(SWITCH_STATEMENT, $3, $6, NULL); }
@@ -1120,7 +1124,7 @@ for_rest_statement	: conditionopt SEMICOLON { $$ = new_glsl_node(FOR_REST_STATEM
 jump_statement		: CONTINUE SEMICOLON { $$ = new_glsl_node(CONTINUE, NULL); }
 			| BREAK SEMICOLON { $$ = new_glsl_node(BREAK, NULL); }
 			| RETURN SEMICOLON { $$ = new_glsl_node(RETURN, NULL); }
-			| RETURN expression SEMICOLON { $$ = new_glsl_node(RETURN, $2, NULL); }
+			| RETURN expression SEMICOLON { $$ = new_glsl_node(RETURN_VALUE, $2, NULL); }
 			| DISCARD SEMICOLON { $$ = new_glsl_node(DISCARD, NULL); }
 			;
 
@@ -1294,7 +1298,7 @@ struct_specifier	: STRUCT struct_name LEFT_BRACE struct_declaration_list RIGHT_B
 			| STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE { $$ = new_glsl_node(STRUCT_SPECIFIER, new_null_glsl_identifier(), $3, NULL); }
 			;
 
-struct_declaration_list : struct_declaration { $$ = $1; }
+struct_declaration_list : struct_declaration { $$ = new_glsl_node(STRUCT_DECLARATION_LIST, $1, NULL); }
 			| struct_declaration_list struct_declaration { $$ = new_glsl_node(STRUCT_DECLARATION_LIST, $1, $2, NULL); }
 			;
 
@@ -1302,12 +1306,12 @@ struct_declaration	: type_specifier struct_declarator_list SEMICOLON { $$ = new_
 			| type_qualifier type_specifier struct_declarator_list SEMICOLON { $$ = new_glsl_node(STRUCT_DECLARATION, $1, $2, $3, NULL); }
 			;
 
-struct_declarator_list	: struct_declarator { $$ = $1; }
+struct_declarator_list	: struct_declarator { $$ = new_glsl_node(STRUCT_DECLARATOR_LIST, $1, NULL); }
 			| struct_declarator_list COMMA struct_declarator { $$ = new_glsl_node(STRUCT_DECLARATOR_LIST, $1, $3, NULL); }
 			;
 
 struct_declarator	: decl_identifier { $$ = new_glsl_node(STRUCT_DECLARATOR, $1, NULL); }
-			| decl_identifier array_specifier { $$ = new_glsl_node(STRUCT_DECLARATOR, $1, $2, NULL); }
+			| decl_identifier array_specifier_list { $$ = new_glsl_node(STRUCT_DECLARATOR, $1, $2, NULL); }
 			;
 
 type_qualifier		: single_type_qualifier { $$ = new_glsl_node(TYPE_QUALIFIER_LIST, $1, NULL); }
@@ -1483,8 +1487,8 @@ function_call_or_method	: function_call_generic { $$ = $1; }
 			;
 
 function_call_generic	: function_identifier LEFT_PAREN function_call_parameter_list RIGHT_PAREN { $$ = new_glsl_node(FUNCTION_CALL, $1, $3, NULL); }
-			| function_identifier LEFT_PAREN LEFT_PAREN { $$ = new_glsl_node(FUNCTION_CALL, $1, NULL); }
-			| function_identifier LEFT_PAREN VOID RIGHT_PAREN { $$ = new_glsl_node(FUNCTION_CALL, $1, NULL); }
+			| function_identifier LEFT_PAREN LEFT_PAREN { $$ = new_glsl_node(FUNCTION_CALL, $1, $$ = new_glsl_node(FUNCTION_CALL_PARAMETER_LIST, NULL), NULL); }
+			| function_identifier LEFT_PAREN VOID RIGHT_PAREN { $$ = new_glsl_node(FUNCTION_CALL, $1, $$ = new_glsl_node(FUNCTION_CALL_PARAMETER_LIST, NULL), NULL); }
 			;
 
 function_call_parameter_list : assignment_expression { $$ = $1; }
@@ -1729,7 +1733,6 @@ void print_node_as_glsl(struct glsl_node *n, int depth)
 		print_list_as_glsl(n, "", "", token_to_str[n->code], depth);
 		break;
 	case FUNCTION_DECLARATION:
-	case FUNCTION_DEFINITION:
 	case FUNCTION_HEADER:
 	case FULLY_SPECIFIED_TYPE:
 	case PARAMETER_DECLARATION:
@@ -1737,36 +1740,93 @@ void print_node_as_glsl(struct glsl_node *n, int depth)
 	case TYPE_QUALIFIER_LIST:
 		print_list_as_glsl(n, "", " ", "", depth);
 		break;
+	case FUNCTION_DEFINITION:
+		print_list_as_glsl(n, "", " ", "\n", depth);
+		break;
+	case FUNCTION_CALL:
+		print_node_as_glsl(n->children[0], depth);
+		printf("(");
+		print_node_as_glsl(n->children[1], depth);
+		printf(")");
+		break;
+	case SELECTION_STATEMENT:
+		printf("if (");
+		print_node_as_glsl(n->children[0], depth);
+		printf(")\n");
+		print_node_as_glsl(n->children[1], depth);
+		break;
+	case RETURN:
+		printf("return;\n");
+		break;
+	case RETURN_VALUE:
+		printf("return ");
+		print_node_as_glsl(n->children[0], depth);
+		printf(";\n");
+		break;
+	case SELECTION_STATEMENT_ELSE:
+		printf("if (");
+		print_node_as_glsl(n->children[0], depth);
+		printf(") ");
+		print_node_as_glsl(n->children[1], depth);
+		printf(" else ");
+		print_node_as_glsl(n->children[2], depth);
+		printf("\n");
+		break;
 	case SINGLE_DECLARATION:
+		for (j = 0; j < depth; j++) printf("\t");
 		print_list_as_glsl(n, "", " ", ";\n", depth);
 		break;
 	case SINGLE_INIT_DECLARATION:
-		for (i = 0; i < 3; i++) {
-			print_node_as_glsl(n->children[i], depth);
-			if (i < 2)
-				printf(" ");
-		}
-		printf("=");
+		print_node_as_glsl(n->children[0], depth);
+		printf(" ");
+		print_node_as_glsl(n->children[1], depth);
+		printf(" = ");
 		print_node_as_glsl(n->children[3], depth);
 		printf(";\n");
 		break;
 	case STATEMENT_LIST:
 		printf("{\n");
-		depth++;
 		for (i = 0; i < n->child_count; i++) {
-			for (j = 0; j < depth; j++) {
-				printf("\t");
-			}
-			print_node_as_glsl(n->children[i], depth);
+			for (j = 0; j < depth + 1; j++) printf("\t");
+			print_node_as_glsl(n->children[i], depth + 1);
 		}
-		printf("}\n");
+		for (j = 0; j < depth; j++) printf("\t");
+		printf("}");
 		break;
-	case FUNCTION_PARAMETER_LIST:
-		print_list_as_glsl(n, "(", ", ", ")", depth);
+	case STRUCT_DECLARATION_LIST:
+		for (i = 0; i < n->child_count; i++) {
+			for (j = 0; j < depth + 1; j++) printf("\t");
+			print_node_as_glsl(n->children[i], depth + 1);
+		}
+		for (j = 0; j < depth; j++) printf("\t");
 		break;
+	case BLOCK_DECLARATION:
+		print_node_as_glsl(n->children[0], depth);
+		printf(" ");
+		print_node_as_glsl(n->children[1], depth);
+		printf(" {\n");
+		print_node_as_glsl(n->children[2], depth);
+		printf("} ");
+		print_node_as_glsl(n->children[3], depth);
+		printf(" ");
+		print_node_as_glsl(n->children[4], depth);
+		printf(";\n");
+		break;
+	case STRUCT_DECLARATOR:
 		print_list_as_glsl(n, "", " ", "", depth);
 		break;
+	case STRUCT_DECLARATOR_LIST:
+		print_list_as_glsl(n, "", ",", "", depth);
+		break;
+	case STRUCT_DECLARATION:
+		print_list_as_glsl(n, "", " ", ";\n", depth);
+		break;
+	case FUNCTION_PARAMETER_LIST:
+	case FUNCTION_CALL_PARAMETER_LIST:
+		print_list_as_glsl(n, "(", ", ", ")", depth);
+		break;
 	case TYPE_SPECIFIER:
+	case POSTFIX_EXPRESSION:
 		print_list_as_glsl(n, "", "", "", depth);
 		break;
 	case EXPRESSION_STATEMENT:

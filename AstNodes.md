@@ -3,10 +3,11 @@ AST structure
 
 This GLSL parser uses a single structure to define all AST nodes that stores a variable number of child nodes.  Each node in the AST is assigned a code which determines how to interpret it's child nodes. The expected types for the child nodes of each type is documented in the list below.
 
-In each entry below the left side of the ":" is a node type and the right side defines the type of child nodes the type can have.  Nodes surrounded by brackets are optional and "|" separated list of codes denote that the child can be any one of the types in the list. Entries in all lower case are simply assign a label to an "|" list and do not define a node type.
+In each entry below the left side of the ":" is a node type and the right side defines the type of child nodes the type can have.  Nodes surrounded by brackets are optional and "|" separated list of codes denote that the child can be any one of the types in the list. A node is followed by `...` matches an arbitrary number of nodes (including zero) of that type. Entries in all lower case are simply assign a label to an "|" list and do not define a node type.
 
 AST node types (incomplete)
 --------------
+	TRANSLATION_UNIT        : declaration | FUNCTION_DEFINITON
 
 	FUNCTION_DEFINITION     : FUNCTION_DECLARATION STATEMENT_LIST
 
@@ -22,11 +23,11 @@ AST node types (incomplete)
 
 	TYPE_SPECIFIER          : type_token | STRUCT_SPECIFIER | IDENTIFIER
 
-	STRUCT_SPECIFIER        : IDENTIFIER (STRUCT_DECLARATION_LIST | STRUCT_DECLARATION)
+	STRUCT_SPECIFIER        : IDENTIFIER STRUCT_DECLARATION_LIST
 
-	STRUCT_DECLARATION_LIST : STRUCT_DECLARATION
+	STRUCT_DECLARATION_LIST : STRUCT_DECLARATION ...
 
-	STRUCT_DECLARATION      : TYPE_QUALIFIER_LIST TYPE_SPECIFIER (STRUCT_DECLARATOR_LIST | STRUCT_DECLARATOR)
+	STRUCT_DECLARATION      : TYPE_QUALIFIER_LIST TYPE_SPECIFIER STRUCT_DECLARATOR_LIST
 
 	STRUCT_DECLARATOR_LIST  : STRUCT_DECLARATOR ...
 
@@ -98,8 +99,27 @@ AST node types (incomplete)
 
 	STATEMENT_LIST          : statement ...
 
+	statement               : declaration | EXPRESSION_STATEMENT | SELECTION_STATEMENT
+	                        | RETURN | RETURN_VALUE
+
+	declaration             : SINGLE_DECLARATION | SINGLE_INIT_DECLARATION | BLOCK_DECLARATION
+
+	EXPRESSION_STATEMENT	: expression
+
+	expression		: (TODO)
+
 	SINGLE_DECLARATION      : FULLY_SPECIFIED_TYPE IDENTIFIER ARRAY_SPECIFIER_LIST
 
 	SINGLE_INIT_DECLARATION : FULLY_SPECIFIED_TYPE IDENTIFIER ARRAY_SPECIFIER_LIST INITIALIZER
 
-	statement               : (TODO)
+	BLOCK_DECLARATION       : TYPE_QUALIFIER_LIST IDENTIFIER STRUCT_DECLARATION_LIST IDENTIFIER ARRAY_SPECIFIER_LIST
+
+	FUNCTION_CALL           : (TYPE_SPECIFIER | POSTFIX_EXPRESSION) FUNCITON_CALL_PARAMETER_LIST
+
+	SELECTION_STATEMENT     : expression statement
+
+	SELECTION_STATEMENT_ELSE: expression statement statement
+
+	RETURN: (none)
+
+	RETURN_VALUE: expression
