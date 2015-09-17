@@ -559,6 +559,8 @@ const char *token_to_str[4096] = {
 	[LOWP] = "lowp",
 	[PRECISION] = "precision",
 	[AT] = "@",
+	[UNARY_PLUS] = "+",
+	[UNARY_DASH] = "-",
 	[NUM_TOKEN] = ""
 };
 
@@ -1535,12 +1537,6 @@ void print_tree(struct glsl_node *n, int depth)
 {
 	int i;
 
-	//
-	// Skip printing empty lists
-	//
-	if (is_list_node(n) && n->child_count == 0)
-		return;
-
 	for (i = 0; i < depth; i++) {
 		printf("\t");
 	}
@@ -1645,14 +1641,15 @@ bool is_optional_list(struct glsl_node *n)
 
 void print_list_as_glsl(struct glsl_node *n, const char *prefix, const char *delim, const char *postfix, int depth)
 {
-	int i;
+	int i, c = 0;
 	printf("%s", prefix);
 	for (i = 0; i < n->child_count; i++) {
-		if (n->children[i]->child_count || !is_optional_list(n->children[i])) {
-			print_node_as_glsl(n->children[i], depth);
-			if ((i < n->child_count - 1))
-				printf("%s", delim);
-		}
+		if (!n->children[i]->child_count && is_optional_list(n->children[i]))
+			continue;
+		if (c)
+			printf("%s", delim);
+		c++;
+		print_node_as_glsl(n->children[i], depth);
 	}
 	printf("%s", postfix);
 }
@@ -1714,8 +1711,18 @@ void print_node_as_glsl(struct glsl_node *n, int depth)
 	case AND_OP:
 	case OR_OP:
 	case XOR_OP:
+		print_node_as_glsl(n->children[0], depth);
+		if (token_to_str[n->code]) {
+			printf(" %s ", token_to_str[n->code]);
+		} else {
+			printf(" <unknown operator %d> ", n->code);
+		}
+		print_node_as_glsl(n->children[1], depth);
+		break;
 	case DOT:
-		print_list_as_glsl(n, "", token_to_str[n->code], "", depth);
+		print_node_as_glsl(n->children[0], depth);
+		printf(".");
+		print_node_as_glsl(n->children[1], depth);
 		break;
 	case PRE_INC_OP:
 	case PRE_DEC_OP:
