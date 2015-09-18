@@ -123,7 +123,13 @@ AST node types (incomplete)
 	prefix_expression       : PRE_INC_OP | PRE_DEC_OP | UNARY_PLUS
 	                        | UNARY_DASH | TILDE | BANG
 
-	postfix_expression      : POST_INC_OP | POST_DEC_OP | FUNCTION_CALL | ARRAY_REF_OP
+	POSTFIX_EXPRESSION      : expression
+
+	postfix_expression      : POST_INC_OP | POST_DEC_OP | FUNCTION_CALL | ARRAY_REF_OP | DOT
+	                        | IDENTIFIER | INTCONSTANT | UINTCONSTANT | FLOATCONSTANT | TRUE
+				| FALSE
+
+	DOT                     : expression IDENTIFIER
 
 	SINGLE_DECLARATION      : FULLY_SPECIFIED_TYPE IDENTIFIER ARRAY_SPECIFIER_LIST
 
