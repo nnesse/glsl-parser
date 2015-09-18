@@ -3,7 +3,7 @@ AST structure
 
 This GLSL parser uses a single structure to define all AST nodes that stores a variable number of child nodes.  Each node in the AST is assigned a code which determines how to interpret it's child nodes. The expected types for the child nodes of each type is documented in the list below.
 
-In each entry below the left side of the ":" is a node type and the right side defines the type of child nodes the type can have.  Nodes surrounded by brackets are optional and "|" separated list of codes denote that the child can be any one of the types in the list. A node is followed by `...` matches an arbitrary number of nodes (including zero) of that type. Entries in all lower case are simply assign a label to an "|" list and do not define a node type.
+In each entry below the left side of the ":" is a node type and the right side defines the type of child nodes the type can have.  Nodes surrounded by brackets are optional and a "|" separated list denotes that the child can be any one of the types in the list. A node is followed by `...` matches an arbitrary number of nodes (including zero) of that type. Entries in all lower case are simply assign a label to an "|" list and do not define a node type.
 
 AST node types (incomplete)
 --------------
@@ -109,7 +109,21 @@ AST node types (incomplete)
 
 	EXPRESSION_STATEMENT	: expression
 
-	expression		: (TODO)
+	expression              : binary_expression | prefix_expression | postfix_expression
+
+	binary_expression       : EQUAL | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
+	                        | ADD_ASSIGN | SUB_ASSIGN | LEFT_ASSIGN
+	                        | RIGHT_ASSIGN | AND_ASSIGN | XOR_ASSIGN
+	                        | OR_ASSIGN | PLUS | DASH | STAR | SLASH
+	                        | PERCENT | AMPERSAND | EQ_OP | NE_OP
+	                        | LEFT_ANGLE | RIGHT_ANGLE | LE_OP | GE_OP
+	                        | LEFT_OP | RIGHT_OP | CARET | VERTICAL_BAR
+	                        | AND_OP | OR_OP | XOR_OP
+
+	prefix_expression       : PRE_INC_OP | PRE_DEC_OP | UNARY_PLUS
+	                        | UNARY_DASH | TILDE | BANG
+
+	postfix_expression      : POST_INC_OP | POST_DEC_OP | FUNCTION_CALL | ARRAY_REF_OP
 
 	SINGLE_DECLARATION      : FULLY_SPECIFIED_TYPE IDENTIFIER ARRAY_SPECIFIER_LIST
 
