@@ -7,7 +7,9 @@ In each entry below the left side of the ":" is a node type and the right side d
 
 AST node types (incomplete)
 --------------
-	TRANSLATION_UNIT        : declaration | FUNCTION_DEFINITON
+	TRANSLATION_UNIT        : DECLARATION_STATEMENT | FUNCTION_DEFINITON
+
+	DECLARATION_STATEMENT   : declaration
 
 	FUNCTION_DEFINITION     : FUNCTION_DECLARATION STATEMENT_LIST
 
@@ -99,8 +101,9 @@ AST node types (incomplete)
 
 	STATEMENT_LIST          : statement ...
 
-	statement               : declaration | EXPRESSION_STATEMENT | SELECTION_STATEMENT
-	                        | RETURN | RETURN_VALUE
+	statement               : DECLARATION_STATEMENT | EXPRESSION_STATEMENT | SELECTION_STATEMENT
+	                        | RETURN | RETURN_VALUE | BREAK | FOR_STATEMENT | WHILE_STATEMENT
+	                        | DO_STATEMENT
 
 	declaration             : SINGLE_DECLARATION | SINGLE_INIT_DECLARATION | BLOCK_DECLARATION
 
@@ -116,9 +119,31 @@ AST node types (incomplete)
 
 	FUNCTION_CALL           : (TYPE_SPECIFIER | POSTFIX_EXPRESSION) FUNCITON_CALL_PARAMETER_LIST
 
+	ARRAY_REF_OP            : expression expression
+
+	BREAK                   : (empty)
+
 	SELECTION_STATEMENT     : expression statement
 
 	SELECTION_STATEMENT_ELSE: expression statement statement
+
+	WHILE_STATEMENT: condition statement
+
+	DO_STATEMENT: statement expression
+
+	FOR_STATEMENT: for_init_statement FOR_REST_STATEMENT
+
+	for_init_statement: EXPRESSION_STATEMENT | declaration
+
+	FOR_REST_STATEMENT: CONDITION_OPT expression
+
+	CONDITION_OPT: [condition]
+
+	condition:  EXPRESSION_CONDITION | ASSIGNMENT_CONDITION
+
+	EXPRESSION_CONDITION: expression
+
+	ASSIGNMENT_CONDITION: FULLY_SPECIFIED_TYPE IDENTIFIER INITIALIZER
 
 	RETURN: (none)
 

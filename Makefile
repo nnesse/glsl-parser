@@ -12,6 +12,9 @@ glsl.tab.o: lex.glsl.c glsl_parser.h
 
 lex.glsl.o: glsl_parser.h
 
+glsl_regen.o: lex.glsl.c glsl.tab.c
+glsl_ast.o: lex.glsl.c glsl.tab.c
+
 %.o: %.c
 	gcc -g -O0 -std=gnu99 -c -Wall $< -o $@
 

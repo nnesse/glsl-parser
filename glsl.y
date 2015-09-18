@@ -428,6 +428,7 @@ struct glsl_node *new_null_glsl_identifier()
 %token STRUCT_SPECIFIER
 %token FUNCTION_DEFINITION
 %token DECLARATION
+%token DECLARATION_STATEMENT
 %token STATEMENT_LIST
 %token TRANSLATION_UNIT
 %token DECLARATION_TAG
@@ -513,7 +514,7 @@ type_specifier_identifier : IDENTIFIER { $$ = new_glsl_node(IDENTIFIER, NULL); $
 			;
 
 external_declaration	: function_definition { $$ = $1; }
-			| declaration { $$ = $1; }
+			| declaration_statement { $$ = $1; }
 			;
 
 function_definition	: function_prototype compound_statement_no_new_scope { $$ = new_glsl_node(FUNCTION_DEFINITION, $1, $2, NULL); }
@@ -545,7 +546,7 @@ simple_statement	: declaration_statement { $$ = $1; }
 			| jump_statement { $$ = $1; }
 			;
 
-declaration_statement	: declaration { $$ = $1; }
+declaration_statement	: declaration { $$ = new_glsl_node(DECLARATION_STATEMENT, $1, NULL); }
 			;
 
 declaration_tag		: declaration_tag_identifier { $$ = new_glsl_node(DECLARATION_TAG, $1, NULL); }
@@ -627,7 +628,7 @@ statement_no_new_scope	: compound_statement_no_new_scope { $$ = $1; }
 			;
 
 for_init_statement	: expression_statement { $$ = $1; }
-			| declaration_statement { $$ = $1; }
+			| declaration { $$ = $1; }
 			;
 
 conditionopt		: condition { $$ = new_glsl_node(CONDITION_OPT, $1, NULL); }
