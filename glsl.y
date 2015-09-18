@@ -476,7 +476,7 @@ struct glsl_node *new_null_glsl_identifier()
 
 root			: translation_unit { g_glsl_node_root = $1; }
 
-translation_unit	: external_declaration { $$ = $1; }
+translation_unit	: external_declaration { $$ = new_glsl_node(TRANSLATION_UNIT, $1, NULL); }
 			| translation_unit external_declaration { $$ = new_glsl_node(TRANSLATION_UNIT, $1, $2, NULL); }
 			;
 
