@@ -8,21 +8,17 @@
 #include <string.h>
 #include <assert.h>
 
-#include "glsl_parser.h"
-#include "glsl_ast.h"
-#include "glsl_regen.h"
-#include "lex.glsl.h"
+#include "glsl_parser.h" //For context struct
+#include "glsl.tab.h" //For GLSLSTYPE
+#include "lex.glsl.h" //For glsllex()
 
-void glslerror(const char *s);
-int glsllex (void);
+void glslerror(struct glsl_parse_context *c, const char *s);
 
 int8_t *buffer = NULL;
 int8_t *buffer_end = NULL;
 int remaining = 0;
 
-struct glsl_node *g_glsl_node_root;
-
-static int8_t *glsl_parse_alloc(size_t size, int align)
+int8_t *glsl_parse_alloc(size_t size, int align)
 {
 	int8_t *ret;
 
@@ -83,6 +79,8 @@ struct glsl_node *new_null_glsl_identifier()
 	return n;
 }
 
+#define scanner context->scanner //To allow the scanner to find it's context
+
 %}
 
 %defines
@@ -91,6 +89,9 @@ struct glsl_node *new_null_glsl_identifier()
 
 %define api.value.type union
 
+%pure-parser
+%parse-param { struct glsl_parse_context * context }
+%lex-param { void * scanner }
 
 %type <struct glsl_node *> translation_unit
 
@@ -474,7 +475,7 @@ struct glsl_node *new_null_glsl_identifier()
 %token NUM_TOKEN
 %%
 
-root			: translation_unit { g_glsl_node_root = $1; }
+root			: translation_unit { context->root = $1; }
 
 translation_unit	: external_declaration { $$ = new_glsl_node(TRANSLATION_UNIT, $1, NULL); }
 			| translation_unit external_declaration { $$ = new_glsl_node(TRANSLATION_UNIT, $1, $2, NULL); }
@@ -1032,6 +1033,14 @@ primary_expression	: variable_identifier { $$ = $1; }
 
 %%
 
+#include "glsl_ast.h"
+#include "glsl_regen.h"
+
+void glslerror(struct glsl_parse_context *c, const char *s)
+{
+	fprintf(stderr, "GLSL parse error: %s\n", s);
+}
+
 int list_length(struct glsl_node *n, int list_token)
 {
 	if (n->code != list_token) {
@@ -1077,36 +1086,43 @@ static void list_collapse(struct glsl_node *n)
 	}
 }
 
+//The scanner macro, needed for integration with flex, causes problems below
+#undef scanner
+
 int main()
 {
-	glslparse();
+	struct glsl_parse_context context;
 
-	if (g_glsl_node_root) {
-		if (glsl_is_list_node(g_glsl_node_root)) {
+	glsllex_init(&(context.scanner));
+	glslparse(&context);
+
+	if (context.root) {
+		if (glsl_is_list_node(context.root)) {
 			//
 			// list_collapse() can't combine all the TRANSLATION_UNIT nodes
 			// since it would need to replace g_glsl_node_root so we combine
 			// the TRANSLATION_UNIT nodes here.
 			//
-			int list_code = g_glsl_node_root->code;
-			int length = list_length(g_glsl_node_root, list_code);
+			int list_code = context.root->code;
+			int length = list_length(context.root, list_code);
 			struct glsl_node *new_root = (struct glsl_node *)glsl_parse_alloc(offsetof(struct glsl_node, children[length]), 8);
 			new_root->code = TRANSLATION_UNIT;
 			new_root->child_count = 0;
-			list_gather(g_glsl_node_root, new_root, list_code);
+			list_gather(context.root, new_root, list_code);
 			assert(new_root->child_count == length);
-			g_glsl_node_root = new_root;
+			context.root = new_root;
 		}
 		//
 		// Collapse other list nodes
 		//
-		list_collapse(g_glsl_node_root);
+		list_collapse(context.root);
 
 		printf("\nAST tree:\n\n");
-		glsl_print_ast_tree(g_glsl_node_root, 0);
+		glsl_print_ast_tree(context.root, 0);
 
 		printf("\nRegenerated GLSL:\n\n");
-		glsl_regen_tree(g_glsl_node_root, 0);
+		glsl_regen_tree(context.root, 0);
 	}
+	glsllex_destroy(context.scanner);
 }
 

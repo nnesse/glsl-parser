@@ -3,11 +3,19 @@
 #include <math.h>
 #include <stdbool.h>
 #include <string.h>
+
+#define YYSTYPE GLSLSTYPE
+#include "glsl_parser.h"
 #include "glsl.tab.h"
 
 GLSLSTYPE glsllval;
 
 %}
+
+
+%option reentrant
+%option bison-bridge
+%option noyywrap
 
 ws			[ \t]+
 digit			[0-9]
@@ -242,18 +250,8 @@ struct			return STRUCT;
 true			{ return TRUE; }
 false			{ return FALSE; }
 
-{identifier}		{ glsllval.IDENTIFIER = strdup(yytext); return IDENTIFIER; }
-{integer_constant}	{ glsllval.INTCONSTANT = atoi(yytext); return INTCONSTANT; }
-{floating_constant}	{ glsllval.FLOATCONSTANT = atof(yytext); return FLOATCONSTANT; }
+{identifier}		{ (*yylval).IDENTIFIER = strdup(yytext); return IDENTIFIER; }
+{integer_constant}	{ (*yylval).INTCONSTANT = atoi(yytext); return INTCONSTANT; }
+{floating_constant}	{ (*yylval).FLOATCONSTANT = atof(yytext); return FLOATCONSTANT; }
 
 %%
-
-int glslwrap()
-{
-	return 1;
-}
-
-void glslerror(const char *s)
-{
-	fprintf(stderr, "GLSL parse error: %s\n", s);
-}

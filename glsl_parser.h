@@ -1,15 +1,9 @@
-#ifndef GLSL_COMMON
-#define GLSL_COMMON
+#ifndef GLSL_PARSER_H
+#define GLSL_PARSER_H
 
 #include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
-
-//
-// Includes enum glsltokentype contains tokens that can be placed in glsl_node.code
-// Some tokens are only used to communicate between the lexer and the parser.
-// some are used in the AST and the lexer, and some are only used in the AST.
-//
-#include "glsl.tab.h"
 
 struct glsl_node {
 	//Type of this node. These values are all members of the enum
@@ -43,4 +37,23 @@ struct glsl_node {
 //
 struct glsl_node *new_glsl_node(int code, ...) __attribute__ ((sentinel));
 
+//
+// Allocate memory
+//
+int8_t *glsl_parse_alloc(size_t size, int align);
+
+struct glsl_parse_context {
+	void *scanner;
+	struct glsl_node *root;
+};
+
+/*
+
+//
+// Includes enum glsltokentype contains tokens that can be placed in glsl_node.code
+// Some tokens are only used to communicate between the lexer and the parser.
+// some are used in the AST and the lexer, and some are only used in the AST.
+//
+#include "glsl.tab.h"
+*/
 #endif
