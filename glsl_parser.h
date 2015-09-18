@@ -31,23 +31,49 @@ struct glsl_node {
 	struct glsl_node *children[];
 };
 
+struct glsl_parse_context {
+	void *scanner; //Opaque handle to lexer context
+	struct glsl_node *root;
+
+	/* Internal state of the parser's stack allocator */
+	uint8_t *first_buffer;
+	uint8_t *cur_buffer_start;
+	uint8_t *cur_buffer;
+	uint8_t *cur_buffer_end;
+};
+
 //
 // Create a new node for the AST. All values following 'code' will be
 // placed in the node's child array.
 //
-struct glsl_node *new_glsl_node(int code, ...) __attribute__ ((sentinel));
+struct glsl_node *new_glsl_node(struct glsl_parse_context *context, int code, ...) __attribute__ ((sentinel));
 
 //
-// Allocate memory
+// Allocate memory in the parser's stack allocator
 //
-int8_t *glsl_parse_alloc(size_t size, int align);
+uint8_t *glsl_parse_alloc(struct glsl_parse_context *context, size_t size, int align);
 
-struct glsl_parse_context {
-	void *scanner;
-	struct glsl_node *root;
-};
+//
+// Deallocate all memory previously allocated by glsl_parse_alloc()
+// The parser internally uses this allocator so any generated
+// AST data will become invalid when glsl_parse_dealloc() is called.
+//
+void glsl_parse_dealloc(struct glsl_parse_context *context);
 
-/*
+//
+// Initialize a parsing context
+//
+void glsl_parse_context_init(struct glsl_parse_context *context);
+
+//
+// Destroy a parsing context.
+//
+void glsl_parse_context_destroy(struct glsl_parse_context *context);
+
+//
+// Parse standard input and generate an AST in context->root.
+//
+void glsl_parse(struct glsl_parse_context *context);
 
 //
 // Includes enum glsltokentype contains tokens that can be placed in glsl_node.code
@@ -55,5 +81,4 @@ struct glsl_parse_context {
 // some are used in the AST and the lexer, and some are only used in the AST.
 //
 #include "glsl.tab.h"
-*/
 #endif
