@@ -155,7 +155,7 @@ AST node types (incomplete)
 
 	for_init_statement: EXPRESSION_STATEMENT | declaration
 
-	FOR_REST_STATEMENT: CONDITION_OPT expression
+	FOR_REST_STATEMENT: CONDITION_OPT [expression]
 
 	CONDITION_OPT: [condition]
 

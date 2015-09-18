@@ -463,7 +463,11 @@ void glsl_regen_tree(struct glsl_node *n, int depth)
 		print_list_as_glsl(n, "(", ", ", ")", depth);
 		break;
 	case FOR_REST_STATEMENT:
-		print_list_as_glsl(n, "", "; ", "", depth);
+		glsl_regen_tree(n->children[0], depth);
+		printf("; ");
+		if (n->child_count == 2) {
+			glsl_regen_tree(n->children[1], depth);
+		}
 		break;
 	case DECLARATION_STATEMENT:
 		glsl_regen_tree(n->children[0], depth);
