@@ -1107,9 +1107,10 @@ static void list_collapse(struct glsl_parse_context *context, struct glsl_node *
 //The scanner macro, needed for integration with flex, causes problems below
 #undef scanner
 
-void glsl_parse(struct glsl_parse_context *context)
+void glsl_parse_file(struct glsl_parse_context *context, FILE *file)
 {
 	glsllex_init(&(context->scanner));
+	glslset_in(file, context->scanner);
 	glslparse(context);
 	glsllex_destroy(context->scanner);
 	if (context->root) {

@@ -8,7 +8,7 @@ int main()
 
 	glsl_parse_context_init(&context);
 
-	glsl_parse(&context);
+	glsl_parse_file(&context, stdin);
 
 	if (context.root) {
 		printf("\nAST tree:\n\n");

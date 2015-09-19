@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 struct glsl_node {
 	//Type of this node. These values are all members of the enum
@@ -71,9 +72,9 @@ void glsl_parse_context_init(struct glsl_parse_context *context);
 void glsl_parse_context_destroy(struct glsl_parse_context *context);
 
 //
-// Parse standard input and generate an AST in context->root.
+// Parse the supplied file and generate an AST in context->root.
 //
-void glsl_parse(struct glsl_parse_context *context);
+void glsl_parse_file(struct glsl_parse_context *context, FILE *file);
 
 //
 // Include glsl.tab.h to get the enum values that are stored in the 'code'
