@@ -1,9 +1,9 @@
 AST structure
 =============
 
-This GLSL parser uses a single structure to define all AST nodes that stores a variable number of child nodes.  Each node in the AST is assigned a code which determines how to interpret it's child nodes. The expected types for the child nodes of each type is documented in the list below.
+Each node in the AST has the same type `struct glsl_node`. The `glsl_node` struct stores a variable number of children in an array past the end of the structure. It also contains a `code` field that identifies what type of node it is and how to interpret it's child nodes. The node types are documented in the list below.
 
-In each entry below the left side of the ":" is a node type and the right side defines the type of child nodes the type can have.  Nodes surrounded by brackets are optional and a "|" separated list denotes that the child can be any one of the types in the list. A node is followed by `...` matches an arbitrary number of nodes (including zero) of that type. Entries in all lower case are simply assign a label to an "|" list and do not define a node type.
+In each entry below the value on the left side of the ":" is a node type and the values on the right define the type of child nodes the type can have. Nodes surrounded by brackets are optional and a "|" separated list denotes that the child can be any one of the types in the list. If a node is followed by `...` then it matches an arbitrary number of nodes (including zero) of that type. Entries in all lower case are simply assign a label to an "|" list and do not define a node type.
 
 AST node types (incomplete)
 --------------
