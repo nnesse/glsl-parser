@@ -7,4 +7,6 @@ bool glsl_is_list_node(struct glsl_node *n);
 
 void glsl_print_ast_tree(struct glsl_node *n, int depth);
 
+void glsl_regen_tree(struct glsl_node *n, int depth);
+
 #endif

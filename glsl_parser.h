@@ -76,9 +76,8 @@ void glsl_parse_context_destroy(struct glsl_parse_context *context);
 void glsl_parse(struct glsl_parse_context *context);
 
 //
-// Includes enum glsltokentype contains tokens that can be placed in glsl_node.code
-// Some tokens are only used to communicate between the lexer and the parser.
-// some are used in the AST and the lexer, and some are only used in the AST.
+// Include glsl.tab.h to get the enum values that are stored in the 'code'
+// field of glsl_node.
 //
 #include "glsl.tab.h"
 #endif

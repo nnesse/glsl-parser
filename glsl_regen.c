@@ -1,6 +1,5 @@
-#include "glsl_regen.h"
 #include "glsl_parser.h"
-#include "glsl.tab.h"
+#include "glsl_ast.h"
 
 #include <stdio.h>
 

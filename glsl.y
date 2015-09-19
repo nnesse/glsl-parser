@@ -1053,7 +1053,6 @@ primary_expression	: variable_identifier { $$ = $1; }
 %%
 
 #include "glsl_ast.h"
-#include "glsl_regen.h"
 
 void glslerror(struct glsl_parse_context *c, const char *s)
 {
@@ -1150,23 +1149,3 @@ void glsl_parse_context_destroy(struct glsl_parse_context *context)
 {
 	glsl_parse_dealloc(context);
 }
-
-int main()
-{
-	struct glsl_parse_context context;
-
-	glsl_parse_context_init(&context);
-
-	glsl_parse(&context);
-
-	if (context.root) {
-		printf("\nAST tree:\n\n");
-		glsl_print_ast_tree(context.root, 0);
-
-		printf("\nRegenerated GLSL:\n\n");
-		glsl_regen_tree(context.root, 0);
-	}
-
-	glsl_parse_context_destroy(&context);
-}
-
