@@ -5,7 +5,7 @@ Each node in the AST has the same type `struct glsl_node`. The `glsl_node` struc
 
 In each entry below the value on the left side of the ":" is a node type and the values on the right define the type of child nodes the type can have. Nodes surrounded by brackets are optional and a "|" separated list denotes that the child can be any one of the types in the list. If a node is followed by `...` then it matches an arbitrary number of nodes (including zero) of that type. Entries in all lower case are simply assign a label to an "|" list and do not define a node type.
 
-AST node types (incomplete)
+AST node types
 --------------
 	TRANSLATION_UNIT        : DECLARATION_STATEMENT | FUNCTION_DEFINITON
 
@@ -127,7 +127,7 @@ AST node types (incomplete)
 
 	postfix_expression      : POST_INC_OP | POST_DEC_OP | FUNCTION_CALL | ARRAY_REF_OP | DOT
 	                        | IDENTIFIER | INTCONSTANT | UINTCONSTANT | FLOATCONSTANT | TRUE
-				| FALSE
+		                | FALSE
 
 	DOT                     : expression IDENTIFIER
 
@@ -147,24 +147,24 @@ AST node types (incomplete)
 
 	SELECTION_STATEMENT_ELSE: expression statement statement
 
-	WHILE_STATEMENT: condition statement
+	WHILE_STATEMENT         : condition statement
 
-	DO_STATEMENT: statement expression
+	DO_STATEMENT            : statement expression
 
-	FOR_STATEMENT: for_init_statement FOR_REST_STATEMENT
+	FOR_STATEMENT           : for_init_statement FOR_REST_STATEMENT
 
-	for_init_statement: EXPRESSION_STATEMENT | declaration
+	for_init_statement      : EXPRESSION_STATEMENT | declaration
 
-	FOR_REST_STATEMENT: CONDITION_OPT [expression]
+	FOR_REST_STATEMENT      : CONDITION_OPT [expression]
 
-	CONDITION_OPT: [condition]
+	CONDITION_OPT           : [condition]
 
-	condition:  EXPRESSION_CONDITION | ASSIGNMENT_CONDITION
+	condition               :  EXPRESSION_CONDITION | ASSIGNMENT_CONDITION
 
-	EXPRESSION_CONDITION: expression
+	EXPRESSION_CONDITION    : expression
 
-	ASSIGNMENT_CONDITION: FULLY_SPECIFIED_TYPE IDENTIFIER INITIALIZER
+	ASSIGNMENT_CONDITION    : FULLY_SPECIFIED_TYPE IDENTIFIER INITIALIZER
 
-	RETURN: (none)
+	RETURN                  : (none)
 
-	RETURN_VALUE: expression
+	RETURN_VALUE            : expression
