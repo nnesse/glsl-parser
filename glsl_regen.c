@@ -274,6 +274,7 @@ static void print_list_as_glsl(struct glsl_node *n, const char *prefix, const ch
 static void _glsl_regen_tree(struct glsl_node *n, struct string *out, int depth)
 {
 	int i;
+	int j;
 	switch(n->code) {
 	case IDENTIFIER:
 		if (n->data.str)
