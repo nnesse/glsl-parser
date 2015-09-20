@@ -494,7 +494,9 @@ struct glsl_node *new_null_glsl_identifier(struct glsl_parse_context *context)
 %token NUM_TOKEN
 %%
 
-root			: translation_unit { context->root = $1; }
+root			: { context->root = new_glsl_node(context, TRANSLATION_UNIT, NULL); }
+			| translation_unit { context->root = $1; }
+			;
 
 translation_unit	: external_declaration { $$ = new_glsl_node(context,TRANSLATION_UNIT, $1, NULL); }
 			| translation_unit external_declaration { $$ = new_glsl_node(context,TRANSLATION_UNIT, $1, $2, NULL); }
