@@ -2,6 +2,8 @@
 #include "glsl_ast.h"
 
 #include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
 
 static const char *token_to_str[4096] = {
 	[CONST] = "const",
@@ -227,49 +229,76 @@ bool is_optional_list(struct glsl_node *n)
 	return false;
 }
 
-static void print_list_as_glsl(struct glsl_node *n, const char *prefix, const char *delim, const char *postfix, int depth)
+struct string {
+	char *s;
+	int len;
+	int capacity;
+};
+
+static void _glsl_regen_tree(struct glsl_node *n, struct string *out, int depth);
+
+static void string_cat(struct string *str, const char *format, ...)
+{
+	int n;
+	va_list vl;
+	do {
+		int left = str->capacity - str->len;
+		va_start(vl, format);
+		n = vsnprintf(str->s + str->len, left, format, vl);
+		va_end(vl);
+		if (n < left) {
+			break;
+		} else {
+			str->capacity *= 2;
+			str->s = realloc(str->s, str->capacity);
+		}
+	} while (1);
+	str->len += n;
+}
+
+static void print_list_as_glsl(struct glsl_node *n, const char *prefix, const char *delim, const char *postfix, struct string *out, int depth)
 {
 	int i, c = 0;
-	printf("%s", prefix);
+	string_cat(out,"%s", prefix);
 	for (i = 0; i < n->child_count; i++) {
 		if (!n->children[i]->child_count && is_optional_list(n->children[i]))
 			continue;
 		if (c)
-			printf("%s", delim);
+			string_cat(out,"%s", delim);
 		c++;
-		glsl_regen_tree(n->children[i], depth);
+		_glsl_regen_tree(n->children[i], out, depth);
 	}
-	printf("%s", postfix);
+	string_cat(out,"%s", postfix);
 }
 
-void glsl_regen_tree(struct glsl_node *n, int depth)
+static void _glsl_regen_tree(struct glsl_node *n, struct string *out, int depth)
 {
-	int i, j;
+	int i;
 	switch(n->code) {
 	case IDENTIFIER:
 		if (n->data.str)
-			printf("%s", n->data.str);
+			string_cat(out,"%s", n->data.str);
 		break;
 	case FLOATCONSTANT:
-		printf("%f", n->data.f);
+		string_cat(out,"%f", n->data.f);
 		break;
 	case DOUBLECONSTANT:
-		printf("%f", n->data.d);
+		string_cat(out,"%f", n->data.d);
 		break;
 	case INTCONSTANT:
-		printf("%d", n->data.i);
+		string_cat(out,"%d", n->data.i);
 		break;
 	case UINTCONSTANT:
-		printf("%u", n->data.ui);
+		string_cat(out,"%u", n->data.ui);
 		break;
 	case TRANSLATION_UNIT:
-		print_list_as_glsl(n, "", "\n", "\n", depth);
+		print_list_as_glsl(n, "", "\n", "\n", out, depth);
 		break;
 	case ARRAY_SPECIFIER_LIST:
-		print_list_as_glsl(n, "", "", "", depth);
+		print_list_as_glsl(n, "", "", "", out, depth);
 		break;
 	case ARRAY_SPECIFIER:
-		print_list_as_glsl(n, "[", "", "]", depth);
+		print_list_as_glsl(n, "[", "", "]", out, depth);
 		break;
 	case EQUAL:
 	case MUL_ASSIGN:
@@ -301,18 +330,18 @@ void glsl_regen_tree(struct glsl_node *n, int depth)
 	case AND_OP:
 	case OR_OP:
 	case XOR_OP:
-		glsl_regen_tree(n->children[0], depth);
+		_glsl_regen_tree(n->children[0], out, depth);
 		if (token_to_str[n->code]) {
-			printf(" %s ", token_to_str[n->code]);
+			string_cat(out," %s ", token_to_str[n->code]);
 		} else {
-			printf(" <unknown operator %d> ", n->code);
+			string_cat(out," <unknown operator %d> ", n->code);
 		}
-		glsl_regen_tree(n->children[1], depth);
+		_glsl_regen_tree(n->children[1], out, depth);
 		break;
 	case DOT:
-		glsl_regen_tree(n->children[0], depth);
-		printf(".");
-		glsl_regen_tree(n->children[1], depth);
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out,".");
+		_glsl_regen_tree(n->children[1], out, depth);
 		break;
 	case PRE_INC_OP:
 	case PRE_DEC_OP:
@@ -320,14 +349,14 @@ void glsl_regen_tree(struct glsl_node *n, int depth)
 	case UNARY_DASH:
 	case TILDE:
 	case BANG:
-		print_list_as_glsl(n, token_to_str[n->code], "", "", depth);
+		print_list_as_glsl(n, token_to_str[n->code], "", "", out, depth);
 		break;
 	case PAREN_EXPRESSION:
-		print_list_as_glsl(n, "(", "", ")", depth);
+		print_list_as_glsl(n, "(", "", ")", out, depth);
 		break;
 	case POST_INC_OP:
 	case POST_DEC_OP:
-		print_list_as_glsl(n, "", "", token_to_str[n->code], depth);
+		print_list_as_glsl(n, "", "", token_to_str[n->code], out, depth);
 		break;
 	case FUNCTION_DECLARATION:
 	case FUNCTION_HEADER:
@@ -335,156 +364,165 @@ void glsl_regen_tree(struct glsl_node *n, int depth)
 	case PARAMETER_DECLARATION:
 	case PARAMETER_DECLARATOR:
 	case TYPE_QUALIFIER_LIST:
-		print_list_as_glsl(n, "", " ", "", depth);
+		print_list_as_glsl(n, "", " ", "", out, depth);
 		break;
 	case FUNCTION_DEFINITION:
-		print_list_as_glsl(n, "", " ", "\n", depth);
+		print_list_as_glsl(n, "", " ", "\n", out, depth);
 		break;
 	case FUNCTION_CALL:
-		glsl_regen_tree(n->children[0], depth);
-		glsl_regen_tree(n->children[1], depth);
+		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_regen_tree(n->children[1], out, depth);
 		break;
 	case SELECTION_STATEMENT:
-		printf("if (");
-		glsl_regen_tree(n->children[0], depth);
-		printf(") ");
-		glsl_regen_tree(n->children[1], depth);
+		string_cat(out,"if (");
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out,") ");
+		_glsl_regen_tree(n->children[1], out, depth);
 		break;
 	case ARRAY_REF_OP:
-		glsl_regen_tree(n->children[0], depth);
-		printf("[");
-		glsl_regen_tree(n->children[1], depth);
-		printf("]");
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out,"[");
+		_glsl_regen_tree(n->children[1], out, depth);
+		string_cat(out,"]");
 		break;
 	case RETURN:
-		printf("return;\n");
+		string_cat(out,"return;\n");
 		break;
 	case RETURN_VALUE:
-		printf("return ");
-		glsl_regen_tree(n->children[0], depth);
-		printf(";\n");
+		string_cat(out,"return ");
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out,";\n");
 		break;
 	case SELECTION_STATEMENT_ELSE:
-		printf("if (");
-		glsl_regen_tree(n->children[0], depth);
-		printf(") ");
-		glsl_regen_tree(n->children[1], depth);
-		printf(" else ");
-		glsl_regen_tree(n->children[2], depth);
-		printf("\n");
+		string_cat(out,"if (");
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out,") ");
+		_glsl_regen_tree(n->children[1], out, depth);
+		string_cat(out," else ");
+		_glsl_regen_tree(n->children[2], out, depth);
+		string_cat(out,"\n");
 		break;
 	case SINGLE_DECLARATION:
-		print_list_as_glsl(n, "", " ", ";", depth);
+		print_list_as_glsl(n, "", " ", ";", out, depth);
 		break;
 	case SINGLE_INIT_DECLARATION:
-		glsl_regen_tree(n->children[0], depth);
-		printf(" ");
-		glsl_regen_tree(n->children[1], depth);
-		printf(" = ");
-		glsl_regen_tree(n->children[3], depth);
-		printf(";");
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out," ");
+		_glsl_regen_tree(n->children[1], out, depth);
+		string_cat(out," = ");
+		_glsl_regen_tree(n->children[3], out, depth);
+		string_cat(out,";");
 		break;
 	case WHILE_STATEMENT:
-		printf("while (");
-		glsl_regen_tree(n->children[0], depth);
-		printf(") ");
-		glsl_regen_tree(n->children[1], depth);
+		string_cat(out,"while (");
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out,") ");
+		_glsl_regen_tree(n->children[1], out, depth);
 		break;
 	case DO_STATEMENT:
-		printf("do ");
-		glsl_regen_tree(n->children[0], depth);
-		printf(" while ( ");
-		glsl_regen_tree(n->children[1], depth);
-		printf(" );");
+		string_cat(out,"do ");
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out," while ( ");
+		_glsl_regen_tree(n->children[1], out, depth);
+		string_cat(out," );");
 		break;
 	case FOR_STATEMENT:
-		printf("for (");
-		glsl_regen_tree(n->children[0], depth);
-		printf(" ");
-		glsl_regen_tree(n->children[1], depth);
-		printf(") ");
-		glsl_regen_tree(n->children[2], depth);
+		string_cat(out,"for (");
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out," ");
+		_glsl_regen_tree(n->children[1], out, depth);
+		string_cat(out,") ");
+		_glsl_regen_tree(n->children[2], out, depth);
 		break;
 	case ASSIGNMENT_CONDITION:
-		glsl_regen_tree(n->children[0], depth);
-		printf(" ");
-		glsl_regen_tree(n->children[1], depth);
-		printf(" = ");
-		glsl_regen_tree(n->children[2], depth);
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out," ");
+		_glsl_regen_tree(n->children[1], out, depth);
+		string_cat(out," = ");
+		_glsl_regen_tree(n->children[2], out, depth);
 		break;
 	case STATEMENT_LIST:
-		printf("{\n");
+		string_cat(out,"{\n");
 		for (i = 0; i < n->child_count; i++) {
-			for (j = 0; j < depth + 1; j++) printf("\t");
-			glsl_regen_tree(n->children[i], depth + 1);
-			printf("\n");
+			for (j = 0; j < depth + 1; j++) string_cat(out,"\t");
+			_glsl_regen_tree(n->children[i], out, depth + 1);
+			string_cat(out,"\n");
 		}
-		for (j = 0; j < depth; j++) printf("\t");
-		printf("}");
+		for (j = 0; j < depth; j++) string_cat(out,"\t");
+		string_cat(out,"}");
 		break;
 	case STRUCT_DECLARATION_LIST:
 		for (i = 0; i < n->child_count; i++) {
-			for (j = 0; j < depth + 1; j++) printf("\t");
-			glsl_regen_tree(n->children[i], depth + 1);
-			printf("\n");
+			for (j = 0; j < depth + 1; j++) string_cat(out,"\t");
+			_glsl_regen_tree(n->children[i], out, depth + 1);
+			string_cat(out,"\n");
 		}
-		for (j = 0; j < depth; j++) printf("\t");
+		for (j = 0; j < depth; j++) string_cat(out,"\t");
 		break;
 	case BLOCK_DECLARATION:
-		glsl_regen_tree(n->children[0], depth);
-		printf(" ");
-		glsl_regen_tree(n->children[1], depth);
-		printf(" {\n");
-		glsl_regen_tree(n->children[2], depth);
-		printf("} ");
-		glsl_regen_tree(n->children[3], depth);
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out," ");
+		_glsl_regen_tree(n->children[1], out, depth);
+		string_cat(out," {\n");
+		_glsl_regen_tree(n->children[2], out, depth);
+		string_cat(out,"} ");
+		_glsl_regen_tree(n->children[3], out, depth);
 		if (n->children[4]->child_count) {
-			printf(" ");
-			glsl_regen_tree(n->children[4], depth);
+			string_cat(out," ");
+			_glsl_regen_tree(n->children[4], out, depth);
 		}
-		printf(";");
+		string_cat(out,";");
 		break;
 	case BREAK:
-		printf("break;");
+		string_cat(out,"break;");
 		break;
 	case STRUCT_DECLARATOR:
-		print_list_as_glsl(n, "", " ", "", depth);
+		print_list_as_glsl(n, "", " ", "", out, depth);
 		break;
 	case STRUCT_DECLARATOR_LIST:
-		print_list_as_glsl(n, "", ",", "", depth);
+		print_list_as_glsl(n, "", ",", "", out, depth);
 		break;
 	case STRUCT_DECLARATION:
-		print_list_as_glsl(n, "", " ", ";", depth);
+		print_list_as_glsl(n, "", " ", ";", out, depth);
 		break;
 	case FUNCTION_PARAMETER_LIST:
 	case FUNCTION_CALL_PARAMETER_LIST:
-		print_list_as_glsl(n, "(", ", ", ")", depth);
+		print_list_as_glsl(n, "(", ", ", ")", out, depth);
 		break;
 	case FOR_REST_STATEMENT:
-		glsl_regen_tree(n->children[0], depth);
-		printf("; ");
+		_glsl_regen_tree(n->children[0], out, depth);
+		string_cat(out,"; ");
 		if (n->child_count == 2) {
-			glsl_regen_tree(n->children[1], depth);
+			_glsl_regen_tree(n->children[1], out, depth);
 		}
 		break;
 	case DECLARATION_STATEMENT:
-		glsl_regen_tree(n->children[0], depth);
+		_glsl_regen_tree(n->children[0], out, depth);
 		break;
 	case TYPE_SPECIFIER:
 	case POSTFIX_EXPRESSION:
 	case CONDITION_OPT:
 	case EXPRESSION_CONDITION:
-		print_list_as_glsl(n, "", "", "", depth);
+		print_list_as_glsl(n, "", "", "", out, depth);
 		break;
 	case EXPRESSION_STATEMENT:
-		print_list_as_glsl(n, "", "", ";", depth);
+		print_list_as_glsl(n, "", "", ";", out, depth);
 		break;
 	default:
 		if (token_to_str[n->code])
-			printf("%s", token_to_str[n->code]);
+			string_cat(out,"%s", token_to_str[n->code]);
 		else
-			printf("<unknown token %d>", n->code);
+			string_cat(out,"<unknown token %d>", n->code);
 		break;
 	}
 }
 
+char *glsl_regen_tree(struct glsl_node *n)
+{
+	struct string s;
+	s.s = malloc(1024);
+	s.len = 0;
+	s.capacity = 1024;
+	_glsl_regen_tree(n, &s, 0);
+	return s.s;
+}

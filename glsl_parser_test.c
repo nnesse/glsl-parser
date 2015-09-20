@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "glsl_parser.h"
 #include "glsl_ast.h"
 
@@ -15,7 +16,9 @@ int main()
 		glsl_print_ast_tree(context.root, 0);
 
 		printf("\nRegenerated GLSL:\n\n");
-		glsl_regen_tree(context.root, 0);
+		char *out = glsl_regen_tree(context.root);
+		printf("%s", out);
+		free(out);
 	}
 
 	glsl_parse_context_destroy(&context);
