@@ -27,8 +27,6 @@ integer_constant	{digit}+
 floating_constant	{digit}+.{digit}+
 
 %x COMMENT
-%x META
-%x META_COMMENT
 
 %%
 
@@ -222,7 +220,6 @@ struct			return STRUCT;
 \^\= return XOR_ASSIGN;
 \|\= return OR_ASSIGN;
 \-\= return SUB_ASSIGN;
-\@ return AT;
 
 \+ return PLUS;
 \- return DASH;
