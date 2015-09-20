@@ -1087,12 +1087,9 @@ static void list_collapse(struct glsl_parse_context *context, struct glsl_node *
 //The scanner macro, needed for integration with flex, causes problems below
 #undef scanner
 
-void glsl_parse_file(struct glsl_parse_context *context, FILE *file)
+static void parse_internal(struct glsl_parse_context *context)
 {
-	glsllex_init(&(context->scanner));
-	glslset_in(file, context->scanner);
 	glslparse(context);
-	glsllex_destroy(context->scanner);
 	if (context->root) {
 		if (glsl_is_list_node(context->root)) {
 			//
@@ -1114,6 +1111,38 @@ void glsl_parse_file(struct glsl_parse_context *context, FILE *file)
 		//
 		list_collapse(context, context->root);
 	}
+}
+
+void glsl_parse_file(struct glsl_parse_context *context, FILE *file)
+{
+	glsllex_init(&(context->scanner));
+
+	glslset_in(file, context->scanner);
+
+	parse_internal(context);
+
+	glsllex_destroy(context->scanner);
+	context->scanner = NULL;
+}
+
+void glsl_parse_string(struct glsl_parse_context *context, const char *str)
+{
+	char *text;
+	size_t sz;
+
+	glsllex_init(&(context->scanner));
+
+	sz = strlen(str);
+	text = malloc(sz + 2);
+	strcpy(text, str);
+	text[sz + 1] = 0;
+	glsl_scan_buffer(text, sz + 2, context->scanner);
+
+	parse_internal(context);
+
+	free(text);
+	glsllex_destroy(context->scanner);
+	context->scanner = NULL;
 }
 
 void glsl_parse_context_init(struct glsl_parse_context *context)

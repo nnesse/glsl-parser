@@ -77,6 +77,11 @@ void glsl_parse_context_destroy(struct glsl_parse_context *context);
 void glsl_parse_file(struct glsl_parse_context *context, FILE *file);
 
 //
+// Parse the supplied string and generate an AST in context->root.
+//
+void glsl_parse_string(struct glsl_parse_context *context, const char *str);
+
+//
 // Include glsl.parse.h to get the enum values that are stored in the 'code'
 // field of glsl_node.
 //
