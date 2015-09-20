@@ -342,9 +342,7 @@ void glsl_regen_tree(struct glsl_node *n, int depth)
 		break;
 	case FUNCTION_CALL:
 		glsl_regen_tree(n->children[0], depth);
-		printf("(");
 		glsl_regen_tree(n->children[1], depth);
-		printf(")");
 		break;
 	case SELECTION_STATEMENT:
 		printf("if (");
