@@ -1,6 +1,6 @@
-glsl.tab.c
-glsl.tab.h
-lex.glsl.c
-lex.glsl.h
-glsl_parse
+glsl.parser.c
+glsl.parser.h
+glsl.lexer.c
+glsl.lexer.h
+glsl_parser_test
 *.o

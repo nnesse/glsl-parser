@@ -1,29 +1,30 @@
-OBJS=glsl.tab.o lex.glsl.o glsl_regen.o glsl_ast.o glsl_parser_test.o
+OBJS=glsl.parser.o glsl.lexer.o glsl_regen.o glsl_ast.o glsl_parser_test.o
 
 all: glsl_parser_test
 
-lex.glsl.c: glsl.lex | glsl.tab.c
-	flex --header-file=lex.glsl.h -P glsl -o lex.glsl.c glsl.lex
+glsl.lexer.c: glsl.lex
+	flex -o $@ $<
 
-glsl.tab.c: glsl.y 
-	bison glsl.y
-
-lex.glsl.o: glsl.tab.c glsl_parser.h
-glsl.tab.o: glsl_parser.h
-
-glsl_regen.o: lex.glsl.c glsl.tab.c glsl_parser.h
-glsl_ast.o: lex.glsl.c glsl.tab.c glsl_parser.h
-glsl_parser_test.o: glsl_parser_test.c glsl_parser.h glsl.tab.c
+glsl.parser.c: glsl.y
+	bison $< -o $@
 
 %.o: %.c
 	gcc -g -O0 -std=gnu99 -c -Wall $< -o $@
+
+glsl.lexer.o: glsl_parser.h glsl.parser.c
+glsl.parser.o: glsl_parser.h glsl.lexer.c glsl.parser.c
+
+glsl_regen.o: glsl_regen.c glsl_parser.h glsl.lexer.c glsl.parser.c
+glsl_ast.o: glsl_ast.c glsl_parser.h glsl.lexer.c glsl.parser.c
+glsl_parser_test.o: glsl_parser_test.c glsl_parser.h glsl.parser.c
 
 glsl_parser_test: $(OBJS)
 	gcc $(OBJS) -o $@
 
 clean:
-	@-rm -f glsl.tab.c
-	@-rm -f glsl.tab.h
-	@-rm -f lex.glsl.c
-	@-rm -f lex.glsl.h
+	@-rm -f glsl_parser_test
+	@-rm -f glsl.parser.c
+	@-rm -f glsl.parser.h
+	@-rm -f glsl.lexer.c
+	@-rm -f glsl.lexer.h
 	@-rm -f *.o

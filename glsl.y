@@ -9,8 +9,8 @@
 #include <assert.h>
 
 #include "glsl_parser.h" //For context struct
-#include "glsl.tab.h" //For GLSLSTYPE
-#include "lex.glsl.h" //For glsllex()
+#include "glsl.parser.h" //For GLSLSTYPE
+#include "glsl.lexer.h" //For glsllex()
 
 void glslerror(struct glsl_parse_context *c, const char *s);
 
@@ -102,7 +102,7 @@ struct glsl_node *new_null_glsl_identifier(struct glsl_parse_context *context)
 
 %}
 
-%defines
+%defines "glsl.parser.h"
 
 %define api.prefix {glsl}
 

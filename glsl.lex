@@ -6,7 +6,7 @@
 
 #define YYSTYPE GLSLSTYPE
 #include "glsl_parser.h"
-#include "glsl.tab.h"
+#include "glsl.parser.h"
 
 GLSLSTYPE glsllval;
 
@@ -16,6 +16,8 @@ GLSLSTYPE glsllval;
 %option reentrant
 %option bison-bridge
 %option noyywrap
+%option header-file="glsl.lexer.h"
+%option prefix="glsl"
 
 ws			[ \t]+
 digit			[0-9]
