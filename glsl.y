@@ -372,8 +372,8 @@ struct glsl_node *new_null_glsl_identifier(struct glsl_parse_context *context)
 %token <double> DOUBLECONSTANT
 %token <int> INTCONSTANT
 %token <unsigned int> UINTCONSTANT
-%token TRUE
-%token FALSE
+%token TRUE_VALUE
+%token FALSE_VALUE
 %token LEFT_OP
 %token RIGHT_OP
 %token INC_OP
@@ -1024,8 +1024,8 @@ primary_expression	: variable_identifier { $$ = $1; }
 			| INTCONSTANT { $$ = new_glsl_node(context,INTCONSTANT, NULL); $$->data.i = $1; }
 			| UINTCONSTANT { $$ = new_glsl_node(context,UINTCONSTANT, NULL); $$->data.ui = $1; }
 			| FLOATCONSTANT { $$ = new_glsl_node(context,FLOATCONSTANT, NULL); $$->data.f = $1; }
-			| TRUE { $$ = new_glsl_node(context,TRUE, NULL); }
-			| FALSE { $$ = new_glsl_node(context,FALSE, NULL); }
+			| TRUE_VALUE { $$ = new_glsl_node(context,TRUE_VALUE, NULL); }
+			| FALSE_VALUE { $$ = new_glsl_node(context,FALSE_VALUE, NULL); }
 			| DOUBLECONSTANT { $$ = new_glsl_node(context,DOUBLECONSTANT, NULL); $$->data.d = $1; }
 			| LEFT_PAREN expression RIGHT_PAREN { $$ = new_glsl_node(context,PAREN_EXPRESSION, $2, NULL); }
 			;

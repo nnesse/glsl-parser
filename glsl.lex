@@ -246,8 +246,8 @@ struct			return STRUCT;
 \& return AMPERSAND;
 \? return QUESTION;
 
-true			{ return TRUE; }
-false			{ return FALSE; }
+true			{ return TRUE_VALUE; }
+false			{ return FALSE_VALUE; }
 
 {identifier}		{ (*yylval).IDENTIFIER = strdup(yytext); return IDENTIFIER; }
 {integer_constant}	{ (*yylval).INTCONSTANT = atoi(yytext); return INTCONSTANT; }
