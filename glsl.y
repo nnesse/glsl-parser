@@ -483,8 +483,8 @@ struct glsl_node *new_null_glsl_identifier(struct glsl_parse_context *context)
 %token LAYOUT_QUALIFIER_ID_LIST
 %token SUBROUTINE_TYPE
 %token PAREN_EXPRESSION
+%token NUM_GLSL_TOKEN
 
-%token NUM_TOKEN
 %%
 
 root			: { context->root = new_glsl_node(context, TRANSLATION_UNIT, NULL); }

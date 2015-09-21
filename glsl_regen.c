@@ -213,10 +213,9 @@ static const char *token_to_str[4096] = {
 	[MEDIUMP] = "mediump",
 	[LOWP] = "lowp",
 	[PRECISION] = "precision",
-	[AT] = "@",
 	[UNARY_PLUS] = "+",
 	[UNARY_DASH] = "-",
-	[NUM_TOKEN] = ""
+	[NUM_GLSL_TOKEN] = ""
 };
 
 bool is_optional_list(struct glsl_node *n)

@@ -268,7 +268,7 @@ static const char *code_to_str[4096] = {
 	[SUBROUTINE_TYPE] = "SUBROUTINE_TYPE",
 	[PAREN_EXPRESSION] = "PAREN_EXPRESSION",
 	[DECLARATION_STATEMENT] = "DECLARATION_STATEMENT",
-	[NUM_TOKEN] = ""
+	[NUM_GLSL_TOKEN] = ""
 };
 
 bool glsl_is_list_node(struct glsl_node *n)
