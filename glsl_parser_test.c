@@ -13,10 +13,10 @@ int main()
 
 	if (context.root) {
 		printf("\nAST tree:\n\n");
-		glsl_print_ast_tree(context.root, 0);
+		glsl_ast_print(context.root, 0);
 
 		printf("\nRegenerated GLSL:\n\n");
-		char *out = glsl_regen_tree(context.root);
+		char *out = glsl_ast_generate_glsl(context.root);
 		printf("%s", out);
 		free(out);
 	}

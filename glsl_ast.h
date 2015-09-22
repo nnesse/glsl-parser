@@ -3,14 +3,7 @@
 
 #include "glsl_parser.h"
 
-struct glsl_ast_walk_data {
-	struct glsl_node *node_stack[1024];
-	int node_stack_level;
-
-	struct glsl_node *parent_stack[1024];
-	int parent_stack_idx[1024];
-	int parent_stack_level;
-};
+struct glsl_ast_walk_data;
 
 //
 // glsl_is_list_node()
@@ -18,17 +11,19 @@ struct glsl_ast_walk_data {
 // Returns true if the children of this node form
 // a list
 //
-bool glsl_is_list_node(struct glsl_node *n);
+bool glsl_ast_is_list_node(struct glsl_node *n);
 
 //
-// glsl_print_ast_tree()
+// glsl_ast_print()
 //
 // Print the AST tree as text for debugging purposes.
 // The 'depth' parameter represents amount to indent the
 // the printed text.
 //
-void glsl_print_ast_tree(struct glsl_node *n, int depth);
+void glsl_ast_print(struct glsl_node *n, int depth);
 
+//
+// glsl_ast_generate_glsl()
 //
 // Translate AST into GLSL
 //
@@ -36,7 +31,7 @@ void glsl_print_ast_tree(struct glsl_node *n, int depth);
 // the AST or NULL on error. The returned string must be
 // deallocataed with free()
 //
-char *glsl_regen_tree(struct glsl_node *n);
+char *glsl_ast_generate_glsl(struct glsl_node *n);
 
 //
 // glsl_ast_walk_init()
@@ -68,4 +63,12 @@ void glsl_ast_walk(struct glsl_ast_walk_data *data, intptr_t userdata,
 	void (*enter_node)(struct glsl_ast_walk_data *data, struct glsl_node *n, intptr_t userdata),
 	void (*exit_node)(struct glsl_ast_walk_data *data, struct glsl_node *n, intptr_t userdata));
 
+struct glsl_ast_walk_data {
+	struct glsl_node *node_stack[1024];
+	int node_stack_level;
+
+	struct glsl_node *parent_stack[1024];
+	int parent_stack_idx[1024];
+	int parent_stack_level;
+};
 #endif

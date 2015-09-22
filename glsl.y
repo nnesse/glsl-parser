@@ -1070,7 +1070,7 @@ static void list_collapse(struct glsl_parse_context *context, struct glsl_node *
 	int i;
 	for (i = 0; i < n->child_count; i++) {
 		struct glsl_node *child = n->children[i];
-		if (glsl_is_list_node(child)) {
+		if (glsl_ast_is_list_node(child)) {
 			int list_token = child->code;
 			int length = list_length(child, list_token);
 			struct glsl_node *g = (struct glsl_node *)glsl_parse_alloc(context, offsetof(struct glsl_node, children[length]), 8);
@@ -1091,7 +1091,7 @@ static void parse_internal(struct glsl_parse_context *context)
 {
 	glslparse(context);
 	if (context->root) {
-		if (glsl_is_list_node(context->root)) {
+		if (glsl_ast_is_list_node(context->root)) {
 			//
 			// list_collapse() can't combine all the TRANSLATION_UNIT nodes
 			// since it would need to replace g_glsl_node_root so we combine

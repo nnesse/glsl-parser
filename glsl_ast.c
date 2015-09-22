@@ -486,7 +486,7 @@ static const char *code_to_str[4096] = {
 	[NUM_GLSL_TOKEN] = ""
 };
 
-bool glsl_is_list_node(struct glsl_node *n)
+bool glsl_ast_is_list_node(struct glsl_node *n)
 {
 	switch(n->code) {
 	case TYPE_NAME_LIST:
@@ -507,7 +507,7 @@ bool glsl_is_list_node(struct glsl_node *n)
 	}
 }
 
-void glsl_print_ast_tree(struct glsl_node *n, int depth)
+void glsl_ast_print(struct glsl_node *n, int depth)
 {
 	int i;
 
@@ -550,7 +550,7 @@ void glsl_print_ast_tree(struct glsl_node *n, int depth)
 	printf("\n");
 
 	for (i = 0; i < n->child_count; i++) {
-		glsl_print_ast_tree((struct glsl_node *)n->children[i], depth + 1);
+		glsl_ast_print((struct glsl_node *)n->children[i], depth + 1);
 	}
 }
 
@@ -608,7 +608,7 @@ struct string {
 	int capacity;
 };
 
-static void _glsl_regen_tree(struct glsl_node *n, struct string *out, int depth);
+static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int depth);
 
 static void string_cat(struct string *str, const char *format, ...)
 {
@@ -639,12 +639,12 @@ static void print_list_as_glsl(struct glsl_node *n, const char *prefix, const ch
 		if (c)
 			string_cat(out,"%s", delim);
 		c++;
-		_glsl_regen_tree(n->children[i], out, depth);
+		_glsl_ast_gen_glsl(n->children[i], out, depth);
 	}
 	string_cat(out,"%s", postfix);
 }
 
-static void _glsl_regen_tree(struct glsl_node *n, struct string *out, int depth)
+static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int depth)
 {
 	int i;
 	int j;
@@ -704,18 +704,18 @@ static void _glsl_regen_tree(struct glsl_node *n, struct string *out, int depth)
 	case AND_OP:
 	case OR_OP:
 	case XOR_OP:
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		if (token_to_str[n->code]) {
 			string_cat(out," %s ", token_to_str[n->code]);
 		} else {
 			string_cat(out," <unknown operator %d> ", n->code);
 		}
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		break;
 	case DOT:
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out,".");
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		break;
 	case PRE_INC_OP:
 	case PRE_DEC_OP:
@@ -744,19 +744,19 @@ static void _glsl_regen_tree(struct glsl_node *n, struct string *out, int depth)
 		print_list_as_glsl(n, "", " ", "\n", out, depth);
 		break;
 	case FUNCTION_CALL:
-		_glsl_regen_tree(n->children[0], out, depth);
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		break;
 	case SELECTION_STATEMENT:
 		string_cat(out,"if (");
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out,") ");
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		break;
 	case ARRAY_REF_OP:
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out,"[");
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		string_cat(out,"]");
 		break;
 	case RETURN:
@@ -764,62 +764,62 @@ static void _glsl_regen_tree(struct glsl_node *n, struct string *out, int depth)
 		break;
 	case RETURN_VALUE:
 		string_cat(out,"return ");
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out,";\n");
 		break;
 	case SELECTION_STATEMENT_ELSE:
 		string_cat(out,"if (");
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out,") ");
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		string_cat(out," else ");
-		_glsl_regen_tree(n->children[2], out, depth);
+		_glsl_ast_gen_glsl(n->children[2], out, depth);
 		string_cat(out,"\n");
 		break;
 	case SINGLE_DECLARATION:
 		print_list_as_glsl(n, "", " ", ";", out, depth);
 		break;
 	case SINGLE_INIT_DECLARATION:
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out," ");
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		string_cat(out," = ");
-		_glsl_regen_tree(n->children[3], out, depth);
+		_glsl_ast_gen_glsl(n->children[3], out, depth);
 		string_cat(out,";");
 		break;
 	case WHILE_STATEMENT:
 		string_cat(out,"while (");
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out,") ");
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		break;
 	case DO_STATEMENT:
 		string_cat(out,"do ");
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out," while ( ");
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		string_cat(out," );");
 		break;
 	case FOR_STATEMENT:
 		string_cat(out,"for (");
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out," ");
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		string_cat(out,") ");
-		_glsl_regen_tree(n->children[2], out, depth);
+		_glsl_ast_gen_glsl(n->children[2], out, depth);
 		break;
 	case ASSIGNMENT_CONDITION:
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out," ");
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		string_cat(out," = ");
-		_glsl_regen_tree(n->children[2], out, depth);
+		_glsl_ast_gen_glsl(n->children[2], out, depth);
 		break;
 	case STATEMENT_LIST:
 		string_cat(out,"{\n");
 		for (i = 0; i < n->child_count; i++) {
 			for (j = 0; j < depth + 1; j++) string_cat(out,"\t");
-			_glsl_regen_tree(n->children[i], out, depth + 1);
+			_glsl_ast_gen_glsl(n->children[i], out, depth + 1);
 			string_cat(out,"\n");
 		}
 		for (j = 0; j < depth; j++) string_cat(out,"\t");
@@ -828,22 +828,22 @@ static void _glsl_regen_tree(struct glsl_node *n, struct string *out, int depth)
 	case STRUCT_DECLARATION_LIST:
 		for (i = 0; i < n->child_count; i++) {
 			for (j = 0; j < depth + 1; j++) string_cat(out,"\t");
-			_glsl_regen_tree(n->children[i], out, depth + 1);
+			_glsl_ast_gen_glsl(n->children[i], out, depth + 1);
 			string_cat(out,"\n");
 		}
 		for (j = 0; j < depth; j++) string_cat(out,"\t");
 		break;
 	case BLOCK_DECLARATION:
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out," ");
-		_glsl_regen_tree(n->children[1], out, depth);
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		string_cat(out," {\n");
-		_glsl_regen_tree(n->children[2], out, depth);
+		_glsl_ast_gen_glsl(n->children[2], out, depth);
 		string_cat(out,"} ");
-		_glsl_regen_tree(n->children[3], out, depth);
+		_glsl_ast_gen_glsl(n->children[3], out, depth);
 		if (n->children[4]->child_count) {
 			string_cat(out," ");
-			_glsl_regen_tree(n->children[4], out, depth);
+			_glsl_ast_gen_glsl(n->children[4], out, depth);
 		}
 		string_cat(out,";");
 		break;
@@ -864,14 +864,14 @@ static void _glsl_regen_tree(struct glsl_node *n, struct string *out, int depth)
 		print_list_as_glsl(n, "(", ", ", ")", out, depth);
 		break;
 	case FOR_REST_STATEMENT:
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out,"; ");
 		if (n->child_count == 2) {
-			_glsl_regen_tree(n->children[1], out, depth);
+			_glsl_ast_gen_glsl(n->children[1], out, depth);
 		}
 		break;
 	case DECLARATION_STATEMENT:
-		_glsl_regen_tree(n->children[0], out, depth);
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		break;
 	case TYPE_SPECIFIER:
 	case POSTFIX_EXPRESSION:
@@ -891,12 +891,12 @@ static void _glsl_regen_tree(struct glsl_node *n, struct string *out, int depth)
 	}
 }
 
-char *glsl_regen_tree(struct glsl_node *n)
+char *glsl_ast_generate_glsl(struct glsl_node *n)
 {
 	struct string s;
 	s.s = malloc(1024);
 	s.len = 0;
 	s.capacity = 1024;
-	_glsl_regen_tree(n, &s, 0);
+	_glsl_ast_gen_glsl(n, &s, 0);
 	return s.s;
 }
