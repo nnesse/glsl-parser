@@ -1,4 +1,4 @@
-OBJS=glsl.parser.o glsl.lexer.o glsl_regen.o glsl_ast.o glsl_parser_test.o
+OBJS=glsl.parser.o glsl.lexer.o glsl_ast.o glsl_parser_test.o
 
 all: glsl_parser_test
 
@@ -14,7 +14,6 @@ glsl.parser.c: glsl.y
 glsl.lexer.o: glsl_parser.h glsl.parser.c
 glsl.parser.o: glsl_parser.h glsl.lexer.c glsl.parser.c
 
-glsl_regen.o: glsl_regen.c glsl_parser.h glsl.lexer.c glsl.parser.c
 glsl_ast.o: glsl_ast.c glsl_parser.h glsl.lexer.c glsl.parser.c
 glsl_parser_test.o: glsl_parser_test.c glsl_parser.h glsl.parser.c
 
