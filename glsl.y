@@ -1013,7 +1013,7 @@ function_call_generic	: function_identifier LEFT_PAREN function_call_parameter_l
 			| function_identifier LEFT_PAREN VOID RIGHT_PAREN { $$ = new_glsl_node(context,FUNCTION_CALL, $1, $$ = new_glsl_node(context,FUNCTION_CALL_PARAMETER_LIST, NULL), NULL); }
 			;
 
-function_call_parameter_list : assignment_expression { $$ = $1; }
+function_call_parameter_list : assignment_expression { $$ = new_glsl_node(context, FUNCTION_CALL_PARAMETER_LIST, $1, NULL); }
 			| function_call_parameter_list COMMA assignment_expression { $$ = new_glsl_node(context,FUNCTION_CALL_PARAMETER_LIST, $1, $3, NULL); }
 			;
 function_identifier	: type_specifier { $$ = $1; }
