@@ -64,7 +64,7 @@ void glsl_ast_walk_push_node(struct glsl_ast_walk_data *data, struct glsl_node *
 // it's children also need processing. When all of a node's children are processed exit_node()
 // will be called.
 //
-static void glsl_ast_walk(struct glsl_ast_walk_data *data, intptr_t userdata,
+void glsl_ast_walk(struct glsl_ast_walk_data *data, intptr_t userdata,
 	void (*enter_node)(struct glsl_ast_walk_data *data, struct glsl_node *n, intptr_t userdata),
 	void (*exit_node)(struct glsl_ast_walk_data *data, struct glsl_node *n, intptr_t userdata));
 
