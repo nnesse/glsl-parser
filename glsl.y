@@ -91,10 +91,13 @@ struct glsl_node *new_glsl_node(struct glsl_parse_context *context, int code, ..
 	return g;
 }
 
-struct glsl_node *new_null_glsl_identifier(struct glsl_parse_context *context)
+static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context, const char *str)
 {
 	struct glsl_node *n = new_glsl_node(context, IDENTIFIER, NULL);
-	n->data.str = NULL;
+	if (!str)
+		n->data.str = NULL;
+	else
+		n->data.str = glsl_parse_strdup(context, str);
 	return n;
 }
 
@@ -495,34 +498,34 @@ translation_unit	: external_declaration { $$ = new_glsl_node(context,TRANSLATION
 			| translation_unit external_declaration { $$ = new_glsl_node(context,TRANSLATION_UNIT, $1, $2, NULL); }
 			;
 
-block_identifier	: IDENTIFIER { $$ = new_glsl_node(context,IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup(context, $1); }
+block_identifier	: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 			;
 
-decl_identifier		: IDENTIFIER { $$ = new_glsl_node(context,IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup(context, $1); }
+decl_identifier		: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 			;
 
-struct_name		: IDENTIFIER { $$ = new_glsl_node(context,IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup(context, $1); }
+struct_name		: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 			;
 
-type_name		: IDENTIFIER { $$ = new_glsl_node(context,IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup(context, $1); }
+type_name		: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 			;
 
-param_name		: IDENTIFIER { $$ = new_glsl_node(context,IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup(context, $1); }
+param_name		: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 			;
 
-function_name		: IDENTIFIER { $$ = new_glsl_node(context,IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup(context, $1); }
+function_name		: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 			;
 
-field_selection		: IDENTIFIER { $$ = new_glsl_node(context,IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup(context, $1); }
+field_selection		: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 			;
 
-variable_identifier	: IDENTIFIER { $$ = new_glsl_node(context,IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup(context, $1); }
+variable_identifier	: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 			;
 
-layout_identifier	: IDENTIFIER { $$ = new_glsl_node(context,IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup(context, $1); }
+layout_identifier	: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 			;
 
-type_specifier_identifier : IDENTIFIER { $$ = new_glsl_node(context,IDENTIFIER, NULL); $$->data.str = glsl_parse_strdup(context, $1); }
+type_specifier_identifier : IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 			;
 
 external_declaration	: function_definition { $$ = $1; }
@@ -564,7 +567,7 @@ declaration_statement	: declaration { $$ = new_glsl_node(context,DECLARATION_STA
 declaration		: function_prototype SEMICOLON { $$ = $1; }
 			| init_declarator_list SEMICOLON { $$ = $1; }
 			| PRECISION precision_qualifier type_specifier SEMICOLON { $$ = new_glsl_node(context,PRECISION_DECLARATION, $2, $3, NULL); }
-			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE SEMICOLON { $$ = new_glsl_node(context,BLOCK_DECLARATION, $1, $2, $4, new_null_glsl_identifier(context), new_glsl_node(context,ARRAY_SPECIFIER_LIST, NULL), NULL);}
+			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE SEMICOLON { $$ = new_glsl_node(context,BLOCK_DECLARATION, $1, $2, $4, new_glsl_identifier(context, NULL), new_glsl_node(context,ARRAY_SPECIFIER_LIST, NULL), NULL);}
 			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier SEMICOLON { $$ = new_glsl_node(context,BLOCK_DECLARATION, $1, $2, $4, $6, new_glsl_node(context,ARRAY_SPECIFIER_LIST, NULL), NULL);}
 			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier array_specifier_list SEMICOLON { $$ = new_glsl_node(context,BLOCK_DECLARATION, $1, $2, $4, $6, $7, NULL);}
 			| type_qualifier SEMICOLON { $$ = new_glsl_node(context,UNINITIALIZED_DECLARATION, $1, NULL); }
@@ -583,7 +586,7 @@ init_declarator_list	: single_declaration { $$ = $1; }
 			| init_declarator_list COMMA decl_identifier EQUAL initializer { $$ = new_glsl_node(context,INIT_DECLARATOR_LIST, $1, $3, new_glsl_node(context,ARRAY_SPECIFIER_LIST, NULL), $5, NULL); }
 			;
 
-single_declaration	: fully_specified_type { $$ = new_glsl_node(context,SINGLE_DECLARATION, $1, new_null_glsl_identifier(context), new_glsl_node(context,ARRAY_SPECIFIER_LIST, NULL), NULL); }
+single_declaration	: fully_specified_type { $$ = new_glsl_node(context,SINGLE_DECLARATION, $1, new_glsl_identifier(context, NULL), new_glsl_node(context,ARRAY_SPECIFIER_LIST, NULL), NULL); }
 			| fully_specified_type decl_identifier { $$ = new_glsl_node(context,SINGLE_DECLARATION, $1, $2, new_glsl_node(context,ARRAY_SPECIFIER_LIST, NULL), NULL); }
 			| fully_specified_type decl_identifier array_specifier_list { $$ = new_glsl_node(context,SINGLE_DECLARATION, $1, $2, $3, NULL); }
 			| fully_specified_type decl_identifier array_specifier_list EQUAL initializer { $$ = new_glsl_node(context,SINGLE_INIT_DECLARATION, $1, $2, $3, $5, NULL); }
@@ -817,7 +820,7 @@ type_specifier_nonarray : VOID { $$ = new_glsl_node(context,VOID, NULL); }
 			;
 
 struct_specifier	: STRUCT struct_name LEFT_BRACE struct_declaration_list RIGHT_BRACE { $$ = new_glsl_node(context,STRUCT_SPECIFIER, $2, $4, NULL);}
-			| STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE { $$ = new_glsl_node(context,STRUCT_SPECIFIER, new_null_glsl_identifier(context), $3, NULL); }
+			| STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE { $$ = new_glsl_node(context,STRUCT_SPECIFIER, new_glsl_identifier(context, NULL), $3, NULL); }
 			;
 
 struct_declaration_list : struct_declaration { $$ = new_glsl_node(context,STRUCT_DECLARATION_LIST, $1, NULL); }
