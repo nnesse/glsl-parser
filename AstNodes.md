@@ -7,9 +7,7 @@ In each entry below the value on the left side of the ":" is a node type and the
 
 AST node types
 --------------
-	TRANSLATION_UNIT        : DECLARATION_STATEMENT | FUNCTION_DEFINITON
-
-	DECLARATION_STATEMENT   : declaration
+	TRANSLATION_UNIT        : DECLARATION | FUNCTION_DEFINITON
 
 	FUNCTION_DEFINITION     : FUNCTION_DECLARATION STATEMENT_LIST
 
@@ -103,11 +101,11 @@ AST node types
 
 	STATEMENT_LIST          : statement ...
 
-	statement               : DECLARATION_STATEMENT | EXPRESSION_STATEMENT | SELECTION_STATEMENT
+	statement               : DECLARATION | EXPRESSION_STATEMENT | SELECTION_STATEMENT
 	                        | RETURN | RETURN_VALUE | BREAK | FOR_STATEMENT | WHILE_STATEMENT
 	                        | DO_STATEMENT
 
-	declaration             : SINGLE_DECLARATION | SINGLE_INIT_DECLARATION | BLOCK_DECLARATION
+	DECLARATION		: SINGLE_DECLARATION | SINGLE_INIT_DECLARATION | BLOCK_DECLARATION | FUNCTION_DECLARATION
 
 	EXPRESSION_STATEMENT	: expression
 
@@ -155,7 +153,7 @@ AST node types
 
 	FOR_STATEMENT           : for_init_statement FOR_REST_STATEMENT
 
-	for_init_statement      : EXPRESSION_STATEMENT | declaration
+	for_init_statement      : EXPRESSION_STATEMENT | DECLARATION
 
 	FOR_REST_STATEMENT      : CONDITION_OPT [expression]
 

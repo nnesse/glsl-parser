@@ -482,7 +482,6 @@ static const char *code_to_str[4096] = {
 	[LAYOUT_QUALIFIER_ID_LIST] = "LAYOUT_QUALIFIER_ID_LIST",
 	[SUBROUTINE_TYPE] = "SUBROUTINE_TYPE",
 	[PAREN_EXPRESSION] = "PAREN_EXPRESSION",
-	[DECLARATION_STATEMENT] = "DECLARATION_STATEMENT",
 	[NUM_GLSL_TOKEN] = ""
 };
 
@@ -777,7 +776,7 @@ static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int dept
 		string_cat(out,"\n");
 		break;
 	case SINGLE_DECLARATION:
-		print_list_as_glsl(n, "", " ", ";", out, depth);
+		print_list_as_glsl(n, "", " ", "", out, depth);
 		break;
 	case SINGLE_INIT_DECLARATION:
 		_glsl_ast_gen_glsl(n->children[0], out, depth);
@@ -785,7 +784,6 @@ static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int dept
 		_glsl_ast_gen_glsl(n->children[1], out, depth);
 		string_cat(out," = ");
 		_glsl_ast_gen_glsl(n->children[3], out, depth);
-		string_cat(out,";");
 		break;
 	case WHILE_STATEMENT:
 		string_cat(out,"while (");
@@ -845,10 +843,20 @@ static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int dept
 			string_cat(out," ");
 			_glsl_ast_gen_glsl(n->children[4], out, depth);
 		}
+		break;
+	case DECLARATION:
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out,";");
 		break;
 	case BREAK:
 		string_cat(out,"break;");
+		break;
+	case STRUCT_SPECIFIER:
+		string_cat(out, "struct ");
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
+		string_cat(out, " {\n");
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
+		string_cat(out, "}");
 		break;
 	case STRUCT_DECLARATOR:
 		print_list_as_glsl(n, "", " ", "", out, depth);
@@ -869,9 +877,6 @@ static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int dept
 		if (n->child_count == 2) {
 			_glsl_ast_gen_glsl(n->children[1], out, depth);
 		}
-		break;
-	case DECLARATION_STATEMENT:
-		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		break;
 	case TYPE_SPECIFIER:
 	case POSTFIX_EXPRESSION:

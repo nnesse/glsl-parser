@@ -124,7 +124,6 @@ static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context,
 %type <struct glsl_node *> statement_list
 %type <struct glsl_node *> compound_statement
 %type <struct glsl_node *> simple_statement
-%type <struct glsl_node *> declaration_statement
 %type <struct glsl_node *> declaration
 %type <struct glsl_node *> identifier_list
 %type <struct glsl_node *> init_declarator_list
@@ -447,7 +446,6 @@ static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context,
 %token STRUCT_SPECIFIER
 %token FUNCTION_DEFINITION
 %token DECLARATION
-%token DECLARATION_STATEMENT
 %token STATEMENT_LIST
 %token TRANSLATION_UNIT
 %token PRECISION_DECLARATION
@@ -532,7 +530,7 @@ type_specifier_identifier : IDENTIFIER { $$ = new_glsl_identifier(context, $1); 
 			;
 
 external_declaration	: function_definition { $$ = $1; }
-			| declaration_statement { $$ = $1; }
+			| declaration { $$ = $1; }
 			;
 
 function_definition	: function_prototype compound_statement_no_new_scope
@@ -563,7 +561,7 @@ compound_statement	: LEFT_BRACE RIGHT_BRACE { $$ = new_glsl_node(context, STATEM
 			| LEFT_BRACE statement_list RIGHT_BRACE { $$ = $2; }
 			;
 
-simple_statement	: declaration_statement { $$ = $1; }
+simple_statement	: declaration { $$ = $1; }
 			| expression_statement { $$ = $1; }
 			| selection_statement { $$ = $1; }
 			| switch_statement { $$ = $1; }
@@ -572,43 +570,66 @@ simple_statement	: declaration_statement { $$ = $1; }
 			| jump_statement { $$ = $1; }
 			;
 
-declaration_statement	: declaration { $$ = new_glsl_node(context, DECLARATION_STATEMENT, $1, NULL); }
-			;
-
-declaration		: function_prototype SEMICOLON { $$ = $1; }
-			| init_declarator_list SEMICOLON { $$ = $1; }
+declaration		: function_prototype SEMICOLON { $$ = new_glsl_node(context, DECLARATION, $1, NULL); }
+			| init_declarator_list SEMICOLON { $$ = new_glsl_node(context, DECLARATION, $1, NULL); }
 			| PRECISION precision_qualifier type_specifier SEMICOLON
-				{ $$ = new_glsl_node(context, PRECISION_DECLARATION, $2, $3, NULL); }
+				{ $$ = new_glsl_node(context, DECLARATION,
+						new_glsl_node(context, PRECISION_DECLARATION,
+							$2,
+							$3,
+							NULL),
+						NULL); }
 			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE SEMICOLON
-				{ $$ = new_glsl_node(context, BLOCK_DECLARATION,
-					$1,
-					$2,
-					$4,
-					new_glsl_identifier(context, NULL),
-					new_glsl_node(context, ARRAY_SPECIFIER_LIST, NULL),
-					NULL); }
+				{ $$ = new_glsl_node(context, DECLARATION,
+						new_glsl_node(context, BLOCK_DECLARATION,
+							$1,
+							$2,
+							$4,
+							new_glsl_identifier(context, NULL),
+							new_glsl_node(context, ARRAY_SPECIFIER_LIST, NULL),
+							NULL),
+						NULL); }
 			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier SEMICOLON
-				{ $$ = new_glsl_node(context, BLOCK_DECLARATION,
-					$1,
-					$2,
-					$4,
-					$6,
-					new_glsl_node(context, ARRAY_SPECIFIER_LIST, NULL),
-					NULL); }
+				{ $$ = new_glsl_node(context, DECLARATION,
+						new_glsl_node(context, BLOCK_DECLARATION,
+							$1,
+							$2,
+							$4,
+							$6,
+							new_glsl_node(context, ARRAY_SPECIFIER_LIST, NULL),
+							NULL),
+						NULL); }
 			| type_qualifier block_identifier LEFT_BRACE struct_declaration_list RIGHT_BRACE decl_identifier array_specifier_list SEMICOLON
-				{ $$ = new_glsl_node(context, BLOCK_DECLARATION,
-					$1,
-					$2,
-					$4,
-					$6,
-					$7,
-					NULL);}
+				{ $$ = new_glsl_node(context, DECLARATION,
+						new_glsl_node(context, BLOCK_DECLARATION,
+							$1,
+							$2,
+							$4,
+							$6,
+							$7,
+							NULL),
+						NULL); }
 			| type_qualifier SEMICOLON
-				{ $$ = new_glsl_node(context, UNINITIALIZED_DECLARATION, $1, NULL); }
+				{ $$ = new_glsl_node(context, DECLARATION,
+						new_glsl_node(context, UNINITIALIZED_DECLARATION,
+							$1,
+							NULL),
+						NULL); }
 			| type_qualifier type_name SEMICOLON
-				{ $$ = new_glsl_node(context, UNINITIALIZED_DECLARATION, $1, $2, NULL); }
+				{ $$ = new_glsl_node(context, DECLARATION,
+						new_glsl_node(context, UNINITIALIZED_DECLARATION,
+							$1,
+							$2,
+							NULL),
+						NULL); }
 			| type_qualifier type_name identifier_list SEMICOLON
-				{ $$ = new_glsl_node(context, UNINITIALIZED_DECLARATION, $1, $2, $3, NULL); }
+				{ $$ = new_glsl_node(context, DECLARATION,
+						new_glsl_node(context, UNINITIALIZED_DECLARATION,
+							$1,
+							$2,
+							$3,
+							NULL),
+						NULL); }
 			;
 
 identifier_list		: COMMA decl_identifier { $$ = $2; }
