@@ -881,6 +881,7 @@ static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int dept
 		}
 		break;
 	case TYPE_SPECIFIER:
+	case INIT_DECLARATOR_LIST:
 	case POSTFIX_EXPRESSION:
 	case CONDITION_OPT:
 	case EXPRESSION_CONDITION:
