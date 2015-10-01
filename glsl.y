@@ -105,7 +105,7 @@ static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context,
 
 %}
 
-%defines "glsl.parser.h"
+%defines
 
 %define api.prefix {glsl}
 

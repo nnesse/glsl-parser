@@ -3,10 +3,10 @@ OBJS=glsl.parser.o glsl.lexer.o glsl_ast.o glsl_parser_test.o
 all: glsl_parser_test
 
 glsl.lexer.c: glsl.lex
-	flex -o $@ $<
+	flex  --header-file=glsl.lexer.h -o $@ $<
 
 glsl.parser.c: glsl.y
-	bison $< -o $@
+	bison --defines=glsl.parser.h $< -o $@
 
 %.o: %.c
 	gcc -g -O0 -std=gnu99 -c -Wall $< -o $@

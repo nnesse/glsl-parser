@@ -16,7 +16,6 @@ GLSLSTYPE glsllval;
 %option reentrant
 %option bison-bridge
 %option noyywrap
-%option header-file="glsl.lexer.h"
 %option prefix="glsl"
 
 ws			[ \t]+
