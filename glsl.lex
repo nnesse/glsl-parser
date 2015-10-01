@@ -23,8 +23,6 @@
 #include "glsl_parser.h"
 #include "glsl.parser.h"
 
-GLSL_STYPE glsllval;
-
 %}
 
 
