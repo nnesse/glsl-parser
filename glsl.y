@@ -9,10 +9,10 @@
 #include <assert.h>
 
 #include "glsl_parser.h" //For context struct
-#include "glsl.parser.h" //For GLSLSTYPE
+#include "glsl.parser.h" //For GLSLSTYPE and GLSLLTYPE
 #include "glsl.lexer.h" //For glsllex()
 
-void glslerror(struct glsl_parse_context *c, const char *s);
+void glslerror(GLSLLTYPE *loc, struct glsl_parse_context *c, const char *s);
 
 #define GLSL_STACK_BUFFER_SIZE (1024*1024)
 #define GLSL_STACK_BUFFER_PAYLOAD_SIZE (GLSL_STACK_BUFFER_SIZE - sizeof(intptr_t))
@@ -114,6 +114,7 @@ static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context,
 %pure-parser
 %parse-param { struct glsl_parse_context * context }
 %lex-param { void * scanner }
+%locations
 
 %type <struct glsl_node *> translation_unit
 
@@ -1342,9 +1343,12 @@ primary_expression	: variable_identifier { $$ = $1; }
 
 #include "glsl_ast.h"
 
-void glslerror(struct glsl_parse_context *c, const char *s)
+//The scanner macro, needed for integration with flex, causes problems below
+#undef scanner
+
+void glslerror(GLSLLTYPE *loc, struct glsl_parse_context *c, const char *s)
 {
-	fprintf(stderr, "GLSL parse error: %s\n", s);
+	fprintf(stderr, "GLSL parse error line %d: %s\n", glslget_lineno(c->scanner), s);
 }
 
 int list_length(struct glsl_node *n, int list_token)
@@ -1391,9 +1395,6 @@ static void list_collapse(struct glsl_parse_context *context, struct glsl_node *
 		list_collapse(context, child);
 	}
 }
-
-//The scanner macro, needed for integration with flex, causes problems below
-#undef scanner
 
 static void parse_internal(struct glsl_parse_context *context)
 {

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #define YYSTYPE GLSLSTYPE
+#define YYLTYPE GLSLLTYPE
 #include "glsl_parser.h"
 #include "glsl.parser.h"
 
@@ -15,6 +16,8 @@ GLSLSTYPE glsllval;
 
 %option reentrant
 %option bison-bridge
+%option bison-locations
+%option yylineno
 %option noyywrap
 %option prefix="glsl"
 
