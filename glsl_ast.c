@@ -766,7 +766,7 @@ static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int dept
 	case RETURN_VALUE:
 		string_cat(out,"return ");
 		_glsl_ast_gen_glsl(n->children[0], out, depth);
-		string_cat(out,";\n");
+		string_cat(out,";");
 		break;
 	case SELECTION_STATEMENT_ELSE:
 		string_cat(out,"if (");
