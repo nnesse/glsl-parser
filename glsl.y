@@ -485,8 +485,8 @@ static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context,
 %token LAYOUT_QUALIFIER_ID_LIST
 %token SUBROUTINE_TYPE
 %token PAREN_EXPRESSION
-%token INITIALIZER_OPT
 %token INIT_DECLARATOR
+%token INITIALIZER
 %token NUM_GLSL_TOKEN
 
 %%
@@ -649,7 +649,6 @@ init_declarator_list	: single_declaration { $$ = new_glsl_node(context, INIT_DEC
 						new_glsl_node(context, INIT_DECLARATOR,
 							$3,
 							new_glsl_node(context, ARRAY_SPECIFIER_LIST, NULL),
-							new_glsl_node(context, INITIALIZER_OPT, NULL),
 							NULL),
 						NULL); }
 			| init_declarator_list COMMA decl_identifier array_specifier_list
@@ -658,7 +657,6 @@ init_declarator_list	: single_declaration { $$ = new_glsl_node(context, INIT_DEC
 						new_glsl_node(context, INIT_DECLARATOR,
 							$3,
 							$4,
-							new_glsl_node(context, INITIALIZER_OPT, NULL),
 							NULL),
 						NULL); }
 			| init_declarator_list COMMA decl_identifier array_specifier_list EQUAL initializer
@@ -667,7 +665,7 @@ init_declarator_list	: single_declaration { $$ = new_glsl_node(context, INIT_DEC
 						new_glsl_node(context, INIT_DECLARATOR,
 							$3,
 							$4,
-							new_glsl_node(context, INITIALIZER_OPT, $6, NULL),
+							$6,
 							NULL),
 						NULL); }
 			| init_declarator_list COMMA decl_identifier EQUAL initializer
@@ -676,7 +674,7 @@ init_declarator_list	: single_declaration { $$ = new_glsl_node(context, INIT_DEC
 						new_glsl_node(context, INIT_DECLARATOR,
 							$3,
 							new_glsl_node(context, ARRAY_SPECIFIER_LIST, NULL),
-							new_glsl_node(context, INITIALIZER_OPT, $5, NULL),
+							$5,
 							NULL),
 						NULL); }
 			;
@@ -710,9 +708,9 @@ single_declaration	: fully_specified_type
 					NULL); }
 			;
 
-initializer		: assignment_expression { $$ = $1; }
-			| LEFT_BRACE initializer_list RIGHT_BRACE { $$ = $2; }
-			| LEFT_BRACE initializer_list COMMA RIGHT_BRACE { $$ = $2; }
+initializer		: assignment_expression { $$ = new_glsl_node(context, INITIALIZER, $1, NULL); }
+			| LEFT_BRACE initializer_list RIGHT_BRACE { $$ = new_glsl_node(context, INITIALIZER, $2, NULL); }
+			| LEFT_BRACE initializer_list COMMA RIGHT_BRACE { $$ = new_glsl_node(context, INITIALIZER, $2, NULL); }
 			;
 
 initializer_list	: initializer
