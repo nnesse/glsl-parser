@@ -32,15 +32,20 @@ struct glsl_node {
 	struct glsl_node *children[];
 };
 
+typedef void (*glsl_parse_error_cb_t)(const char *error_str, int lineno, int start_col, int end_col);
+
 struct glsl_parse_context {
-	void *scanner; //Opaque handle to lexer context
 	struct glsl_node *root;
+	glsl_parse_error_cb_t error_cb;
+
+	void *scanner; //Opaque handle to lexer context
 
 	/* Internal state of the parser's stack allocator */
 	uint8_t *first_buffer;
 	uint8_t *cur_buffer_start;
 	uint8_t *cur_buffer;
 	uint8_t *cur_buffer_end;
+	bool error;
 };
 
 //
@@ -66,6 +71,13 @@ void glsl_parse_dealloc(struct glsl_parse_context *context);
 //
 void glsl_parse_context_init(struct glsl_parse_context *context);
 
+
+//
+// Set the callback to invoke when a parsing error occurs
+//
+void glsl_parse_set_error_cb(struct glsl_parse_context *context, glsl_parse_error_cb_t error_cb);
+
+
 //
 // Destroy a parsing context.
 //
@@ -74,12 +86,16 @@ void glsl_parse_context_destroy(struct glsl_parse_context *context);
 //
 // Parse the supplied file and generate an AST in context->root.
 //
-void glsl_parse_file(struct glsl_parse_context *context, FILE *file);
+// Returns false if a parsing error occured
+//
+bool glsl_parse_file(struct glsl_parse_context *context, FILE *file);
 
 //
 // Parse the supplied string and generate an AST in context->root.
 //
-void glsl_parse_string(struct glsl_parse_context *context, const char *str);
+// Returns false if a parsing error occured
+//
+bool glsl_parse_string(struct glsl_parse_context *context, const char *str);
 
 //
 // Include glsl.parse.h to get the enum values that are stored in the 'code'

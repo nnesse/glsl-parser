@@ -3,15 +3,22 @@
 #include "glsl_parser.h"
 #include "glsl_ast.h"
 
+void error_cb(const char *str, int lineno, int first_col, int last_col)
+{
+	fprintf(stderr, "GLSL parse error line %d(%d-%d): %s\n", lineno, first_col, last_col, str);
+}
+
 int main()
 {
 	struct glsl_parse_context context;
 
 	glsl_parse_context_init(&context);
 
-	glsl_parse_file(&context, stdin);
+	glsl_parse_set_error_cb(&context, error_cb);
 
-	if (context.root) {
+	bool error = glsl_parse_file(&context, stdin);
+
+	if (!error && context.root) {
 		printf("\nAST tree:\n\n");
 		glsl_ast_print(context.root, 0);
 

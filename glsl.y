@@ -12,7 +12,7 @@
 #include "glsl.parser.h" //For GLSL_STYPE and GLSL_LTYPE
 #include "glsl.lexer.h" //For glsl_lex()
 
-void glsl_error(GLSL_LTYPE *loc, struct glsl_parse_context *c, const char *s);
+static void glsl_error(GLSL_LTYPE *loc, struct glsl_parse_context *c, const char *s);
 
 #define GLSL_STACK_BUFFER_SIZE (1024*1024)
 #define GLSL_STACK_BUFFER_PAYLOAD_SIZE (GLSL_STACK_BUFFER_SIZE - sizeof(intptr_t))
@@ -1344,9 +1344,11 @@ primary_expression	: variable_identifier { $$ = $1; }
 //The scanner macro, needed for integration with flex, causes problems below
 #undef scanner
 
-void glsl_error(GLSL_LTYPE *loc, struct glsl_parse_context *c, const char *s)
+static void glsl_error(GLSL_LTYPE *loc, struct glsl_parse_context *c, const char *s)
 {
-	fprintf(stderr, "GLSL parse error line %d(%d-%d): %s\n", loc->first_line, loc->first_column, loc->last_column, s);
+	c->error = true;
+	if (c->error_cb)
+		c->error_cb(s, loc->first_line, loc->first_column, loc->last_column);
 }
 
 int list_length(struct glsl_node *n, int list_token)
@@ -1394,8 +1396,9 @@ static void list_collapse(struct glsl_parse_context *context, struct glsl_node *
 	}
 }
 
-static void parse_internal(struct glsl_parse_context *context)
+static bool parse_internal(struct glsl_parse_context *context)
 {
+	context->error = false;
 	glsl_parse(context);
 	if (context->root) {
 		if (glsl_ast_is_list_node(context->root)) {
@@ -1418,24 +1421,29 @@ static void parse_internal(struct glsl_parse_context *context)
 		//
 		list_collapse(context, context->root);
 	}
+	return context->error;
 }
 
-void glsl_parse_file(struct glsl_parse_context *context, FILE *file)
+bool glsl_parse_file(struct glsl_parse_context *context, FILE *file)
 {
 	glsl_lex_init(&(context->scanner));
 
 	glsl_set_in(file, context->scanner);
 
-	parse_internal(context);
+	bool error;
+
+	error = parse_internal(context);
 
 	glsl_lex_destroy(context->scanner);
 	context->scanner = NULL;
+	return error;
 }
 
-void glsl_parse_string(struct glsl_parse_context *context, const char *str)
+bool glsl_parse_string(struct glsl_parse_context *context, const char *str)
 {
 	char *text;
 	size_t sz;
+	bool error;
 
 	glsl_lex_init(&(context->scanner));
 
@@ -1445,11 +1453,12 @@ void glsl_parse_string(struct glsl_parse_context *context, const char *str)
 	text[sz + 1] = 0;
 	glsl__scan_buffer(text, sz + 2, context->scanner);
 
-	parse_internal(context);
+	error = parse_internal(context);
 
 	free(text);
 	glsl_lex_destroy(context->scanner);
 	context->scanner = NULL;
+	return error;
 }
 
 void glsl_parse_context_init(struct glsl_parse_context *context)
@@ -1460,7 +1469,15 @@ void glsl_parse_context_init(struct glsl_parse_context *context)
 	context->cur_buffer_start = NULL;
 	context->cur_buffer = NULL;
 	context->cur_buffer_end = NULL;
+	context->error_cb = NULL;
+	context->error = false;
 }
+
+void glsl_parse_set_error_cb(struct glsl_parse_context *context, glsl_parse_error_cb_t error_cb)
+{
+	context->error_cb = error_cb;
+}
+
 
 void glsl_parse_context_destroy(struct glsl_parse_context *context)
 {
