@@ -38,7 +38,7 @@ digit			[0-9]
 nondigit		[_a-zA-Z]
 identifier		{nondigit}({nondigit}|{digit})*
 integer_constant	{digit}+
-floating_constant	{digit}+.{digit}+
+floating_constant	{digit}+\.{digit}+
 
 %x COMMENT
 
