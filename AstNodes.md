@@ -147,6 +147,8 @@ AST node types
 
 	FUNCTION_CALL           : (TYPE_SPECIFIER | POSTFIX_EXPRESSION) FUNCITON_CALL_PARAMETER_LIST
 
+	FUNCITON_CALL_PARAMETER_LIST : expression ...
+
 	ARRAY_REF_OP            : expression expression
 
 	BREAK                   : (empty)
