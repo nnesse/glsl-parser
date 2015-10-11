@@ -117,27 +117,78 @@ AST node types
 
 	EXPRESSION_STATEMENT	: expression
 
-	expression              : binary_expression | prefix_expression | postfix_expression
+	expression              : binary_operator | unary_expression
+				| assignment_expression | TERNARY_EXPRESSION
 
-	binary_expression       : EQUAL | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
-	                        | ADD_ASSIGN | SUB_ASSIGN | LEFT_ASSIGN
-	                        | RIGHT_ASSIGN | AND_ASSIGN | XOR_ASSIGN
-	                        | OR_ASSIGN | PLUS | DASH | STAR | SLASH
+	unary_expression	: prefix_expression | postfix_expression
+
+	binary_operator		: PLUS | DASH | STAR | SLASH
 	                        | PERCENT | AMPERSAND | EQ_OP | NE_OP
 	                        | LEFT_ANGLE | RIGHT_ANGLE | LE_OP | GE_OP
 	                        | LEFT_OP | RIGHT_OP | CARET | VERTICAL_BAR
-	                        | AND_OP | OR_OP | XOR_OP | TERNARY_EXPRESSION
+	                        | AND_OP | OR_OP | XOR_OP
+
+	PLUS			: expression expression
+	DASH			: expression expression
+	STAR			: expression expression
+	SLASH			: expression expression
+	PERCENT			: expression expression
+	AMPERSAND		: expression expression
+	DASH			: expression expression
+	STAR			: expression expression
+	SLASH			: expression expression
+	PERCENT			: expression expression
+	EQ_OP			: expression expression
+	NE_OP			: expression expression
+	LEFT_ANGLE		: expression expression
+	RIGHT_ANGLE		: expression expression
+	LE_OP			: expression expression
+	GE_OP			: expression expression
+	LEFT_OP			: expression expression
+	RIGHT_OP		: expression expression
+	CARET			: expression expression
+	VERTICAL_BAR		: expression expression
+	AND_OP			: expression expression
+	OR_OP			: expression expression
+	XOR_OP			: expression expression
+
+	assignment_expression	: EQUAL | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
+	                        | ADD_ASSIGN | SUB_ASSIGN | LEFT_ASSIGN
+	                        | RIGHT_ASSIGN | AND_ASSIGN | XOR_ASSIGN
+	                        | OR_ASSIGN
+
+	EQUAL			: unary_expression expression
+	MUL_ASSIGN		: unary_expression expression
+	DIV_ASSIGN		: unary_expression expression
+	MOD_ASSIGN		: unary_expression expression
+	ADD_ASSIGN		: unary_expression expression
+	SUB_ASSIGN		: unary_expression expression
+	LEFT_ASSIGN		: unary_expression expression
+	RIGHT_ASSIGN		: unary_expression expression
+	AND_ASSIGN		: unary_expression expression
+	XOR_ASSIGN		: unary_expression expression
+	OR_ASSIGN		: unary_expression expression
 
 	TERNARY_EXPRESSION	| expression expression expression
 
 	prefix_expression       : PRE_INC_OP | PRE_DEC_OP | UNARY_PLUS
 	                        | UNARY_DASH | TILDE | BANG
 
+	PRE_INC_OP		: expression
+	PRE_DEC_OP		: expression
+	UNARY_PLUS		: expression
+	UNARY_DASH		: expression
+	TILDE			: expression
+	BANG			: expression
+
 	POSTFIX_EXPRESSION      : expression
 
 	postfix_expression      : POST_INC_OP | POST_DEC_OP | FUNCTION_CALL | ARRAY_REF_OP | DOT
 	                        | IDENTIFIER | INTCONSTANT | UINTCONSTANT | FLOATCONSTANT | TRUE
 		                | FALSE
+
+	POST_INC_OP		: expression
+	POST_DEC_OP		: expression
 
 	DOT                     : expression IDENTIFIER
 
