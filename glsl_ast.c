@@ -484,6 +484,7 @@ static const char *code_to_str[4096] = {
 	[PAREN_EXPRESSION] = "PAREN_EXPRESSION",
 	[INIT_DECLARATOR] = "INIT_DECLARATOR",
 	[INITIALIZER] = "INITIALIZER",
+	[TERNARY_EXPRESSION] = "TERNARY_EXPRESSION",
 	[NUM_GLSL_TOKEN] = ""
 };
 
@@ -895,6 +896,13 @@ static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int dept
 		break;
 	case INITIALIZER_LIST:
 		print_list_as_glsl(n, "{", ", ", "}", out, depth);
+		break;
+	case TERNARY_EXPRESSION:
+		_glsl_ast_gen_glsl(n->children[0], out, depth);
+		string_cat(out," ? ");
+		_glsl_ast_gen_glsl(n->children[1], out, depth);
+		string_cat(out," : ");
+		_glsl_ast_gen_glsl(n->children[2], out, depth);
 		break;
 	case TYPE_SPECIFIER:
 	case POSTFIX_EXPRESSION:

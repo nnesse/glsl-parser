@@ -487,6 +487,8 @@ static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context,
 %token PAREN_EXPRESSION
 %token INIT_DECLARATOR
 %token INITIALIZER
+%token TERNARY_EXPRESSION
+
 %token NUM_GLSL_TOKEN
 
 %%
@@ -1153,7 +1155,7 @@ constant_expression	: conditional_expression { $$ = $1; }
 
 conditional_expression	: logical_or_expression { $$ = $1; }
 			| logical_or_expression QUESTION expression COLON assignment_expression
-				{ $$ = new_glsl_node(context, QUESTION, $1, $3, $5, NULL); }
+				{ $$ = new_glsl_node(context, TERNARY_EXPRESSION, $1, $3, $5, NULL); }
 			;
 
 logical_or_expression	: logical_xor_expression { $$ = $1; }

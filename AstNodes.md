@@ -126,7 +126,9 @@ AST node types
 	                        | PERCENT | AMPERSAND | EQ_OP | NE_OP
 	                        | LEFT_ANGLE | RIGHT_ANGLE | LE_OP | GE_OP
 	                        | LEFT_OP | RIGHT_OP | CARET | VERTICAL_BAR
-	                        | AND_OP | OR_OP | XOR_OP
+	                        | AND_OP | OR_OP | XOR_OP | TERNARY_EXPRESSION
+
+	TERNARY_EXPRESSION	| expression expression expression
 
 	prefix_expression       : PRE_INC_OP | PRE_DEC_OP | UNARY_PLUS
 	                        | UNARY_DASH | TILDE | BANG
