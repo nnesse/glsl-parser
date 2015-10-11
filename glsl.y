@@ -876,7 +876,7 @@ type_specifier		: type_specifier_nonarray
 array_specifier_list	: array_specifier
 				{ $$ = new_glsl_node(context, ARRAY_SPECIFIER_LIST, $1, NULL); }
 
-		     	| array_specifier_list array_specifier
+			| array_specifier_list array_specifier
 				{ $$ = new_glsl_node(context, ARRAY_SPECIFIER_LIST, $1, $2, NULL); }
 			;
 
@@ -1097,7 +1097,7 @@ interpolation_qualifier : SMOOTH { $$ = new_glsl_node(context, SMOOTH, NULL); }
 invariant_qualifier	: INVARIANT { $$ = new_glsl_node(context, INVARIANT, NULL); }
 			;
 
-precise_qualifier 	: PRECISE { $$ = new_glsl_node(context, PRECISE, NULL); }
+precise_qualifier	: PRECISE { $$ = new_glsl_node(context, PRECISE, NULL); }
 			;
 
 storage_qualifier	: CONST { $$ = new_glsl_node(context, CONST, NULL); }
