@@ -5,6 +5,9 @@ Each node in the AST has the same type `struct glsl_node`. The `glsl_node` struc
 
 In each entry below the value on the left side of the ":" is a node type and the values on the right define the type of child nodes the type has. Nodes surrounded by brackets are optional and a "|" separated list denotes that the child can be any one of the types in the list. If a node is followed by `...` then it matches an arbitrary number of nodes (including zero) of that type. Entries in all lower case simply assign a label to an "|" list and do not define a node type.
 
+Some of the node descriptions below contain a comment indicating the equivalent GLSL code they represent in terms of identifier's 'a', 'b', 'c', which refer to the node's children. Comments
+in other nodes may list some arbitary examples of GLSL fragments the node type could represent.
+
 AST node types
 --------------
 	TRANSLATION_UNIT        : DECLARATION | FUNCTION_DEFINITON
@@ -109,13 +112,13 @@ AST node types
 
 	INIT_DECLARATOR_LIST    : (SINGLE_DECLARATION | SINGLE_INIT_DECLARATION) INIT_DECLARATOR ...
 
-	INIT_DECLARATOR         : IDENTIFIER ARRAY_SPECIFIER_LIST INITIALIZER
+	INIT_DECLARATOR         : IDENTIFIER ARRAY_SPECIFIER_LIST INITIALIZER // example: int r = 0
 
 	INITIALIZER             : expression | INITIALIZER_LIST
 
-	INITIALIZER_LIST        : INITIALIZER...
+	INITIALIZER_LIST        : INITIALIZER... // { a, b, c, ...}
 
-	EXPRESSION_STATEMENT    : expression
+	EXPRESSION_STATEMENT    : [expression] // "a;" or ";"
 
 	expression              : binary_operator | unary_expression
 	                        | assignment_expression | TERNARY_EXPRESSION
@@ -128,106 +131,104 @@ AST node types
 	                        | LEFT_OP | RIGHT_OP | CARET | VERTICAL_BAR
 	                        | AND_OP | OR_OP | XOR_OP
 
-	PLUS                    : expression expression
-	DASH                    : expression expression
-	STAR                    : expression expression
-	SLASH                   : expression expression
-	PERCENT                 : expression expression
-	AMPERSAND               : expression expression
-	DASH                    : expression expression
-	STAR                    : expression expression
-	SLASH                   : expression expression
-	PERCENT                 : expression expression
-	EQ_OP                   : expression expression
-	NE_OP                   : expression expression
-	LEFT_ANGLE              : expression expression
-	RIGHT_ANGLE             : expression expression
-	LE_OP                   : expression expression
-	GE_OP                   : expression expression
-	LEFT_OP                 : expression expression
-	RIGHT_OP                : expression expression
-	CARET                   : expression expression
-	VERTICAL_BAR            : expression expression
-	AND_OP                  : expression expression
-	OR_OP                   : expression expression
-	XOR_OP                  : expression expression
+	PLUS                    : expression expression // a + b
+	DASH                    : expression expression // a - b
+	STAR                    : expression expression // a * b
+	SLASH                   : expression expression // a / b
+	PERCENT                 : expression expression // a % b
+	AMPERSAND               : expression expression // a & b
+	EQ_OP                   : expression expression // a == b
+	NE_OP                   : expression expression // a != b
+	LEFT_ANGLE              : expression expression // a < b
+	RIGHT_ANGLE             : expression expression // a > b
+	LE_OP                   : expression expression // a <= b
+	GE_OP                   : expression expression // a >= b
+	LEFT_OP                 : expression expression // a << b
+	RIGHT_OP                : expression expression // a >> b
+	CARET                   : expression expression // a ^ b
+	VERTICAL_BAR            : expression expression // a | b
+	AND_OP                  : expression expression // a && b
+	OR_OP                   : expression expression // a || b
+	XOR_OP                  : expression expression // a ^^ b
 
 	assignment_expression   : EQUAL | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
 	                        | ADD_ASSIGN | SUB_ASSIGN | LEFT_ASSIGN
 	                        | RIGHT_ASSIGN | AND_ASSIGN | XOR_ASSIGN
 	                        | OR_ASSIGN
 
-	EQUAL                   : unary_expression expression
-	MUL_ASSIGN              : unary_expression expression
-	DIV_ASSIGN              : unary_expression expression
-	MOD_ASSIGN              : unary_expression expression
-	ADD_ASSIGN              : unary_expression expression
-	SUB_ASSIGN              : unary_expression expression
-	LEFT_ASSIGN             : unary_expression expression
-	RIGHT_ASSIGN            : unary_expression expression
-	AND_ASSIGN              : unary_expression expression
-	XOR_ASSIGN              : unary_expression expression
-	OR_ASSIGN               : unary_expression expression
+	EQUAL                   : unary_expression expression // a = b
+	MUL_ASSIGN              : unary_expression expression // a *= b
+	DIV_ASSIGN              : unary_expression expression // a /= b
+	MOD_ASSIGN              : unary_expression expression // a %= b
+	ADD_ASSIGN              : unary_expression expression // a += b
+	SUB_ASSIGN              : unary_expression expression // a -= b
+	LEFT_ASSIGN             : unary_expression expression // a <<= b
+	RIGHT_ASSIGN            : unary_expression expression // a >>= b
+	AND_ASSIGN              : unary_expression expression // a &= b
+	XOR_ASSIGN              : unary_expression expression // a ^= b
+	OR_ASSIGN               : unary_expression expression // a |= b
 
-	TERNARY_EXPRESSION      : expression expression expression
+	TERNARY_EXPRESSION      : expression expression expression // a ? b : c
 
 	prefix_expression       : PRE_INC_OP | PRE_DEC_OP | UNARY_PLUS
 	                        | UNARY_DASH | TILDE | BANG
 
-	PRE_INC_OP              : expression
-	PRE_DEC_OP              : expression
-	UNARY_PLUS              : expression
-	UNARY_DASH              : expression
-	TILDE                   : expression
-	BANG                    : expression
+	PRE_INC_OP              : expression // ++a
+	PRE_DEC_OP              : expression // --a
+	UNARY_PLUS              : expression // +a
+	UNARY_DASH              : expression // -a
+	TILDE                   : expression // ~a
+	BANG                    : expression // !a
 
 	POSTFIX_EXPRESSION      : expression
 
 	postfix_expression      : POST_INC_OP | POST_DEC_OP | FUNCTION_CALL | ARRAY_REF_OP | DOT
 	                        | IDENTIFIER | INTCONSTANT | UINTCONSTANT | FLOATCONSTANT | TRUE
-	                        | FALSE
+	                        | FALSE | PAREN_EXPRESSION
 
-	POST_INC_OP             : expression
-	POST_DEC_OP             : expression
+	PAREN_EXPRESSION        : expression // (a)
 
-	DOT                     : expression IDENTIFIER
+	POST_INC_OP             : expression // a++
+	POST_DEC_OP             : expression // a--
 
-	SINGLE_DECLARATION      : FULLY_SPECIFIED_TYPE IDENTIFIER ARRAY_SPECIFIER_LIST
+	DOT                     : expression IDENTIFIER // a.b
 
-	SINGLE_INIT_DECLARATION : FULLY_SPECIFIED_TYPE IDENTIFIER ARRAY_SPECIFIER_LIST INITIALIZER
+	SINGLE_DECLARATION      : FULLY_SPECIFIED_TYPE IDENTIFIER ARRAY_SPECIFIER_LIST //examples: "float x[10]", "vec3 y"
 
-	BLOCK_DECLARATION       : TYPE_QUALIFIER_LIST IDENTIFIER STRUCT_DECLARATION_LIST IDENTIFIER ARRAY_SPECIFIER_LIST
+	SINGLE_INIT_DECLARATION : FULLY_SPECIFIED_TYPE IDENTIFIER ARRAY_SPECIFIER_LIST INITIALIZER //examples: "float x[10] = {...}", "float y = 1.0"
 
-	FUNCTION_CALL           : (TYPE_SPECIFIER | POSTFIX_EXPRESSION) FUNCITON_CALL_PARAMETER_LIST
+	BLOCK_DECLARATION       : TYPE_QUALIFIER_LIST IDENTIFIER STRUCT_DECLARATION_LIST IDENTIFIER ARRAY_SPECIFIER_LIST // a b { c } d e;
+
+	FUNCTION_CALL           : (TYPE_SPECIFIER | POSTFIX_EXPRESSION) FUNCITON_CALL_PARAMETER_LIST //examples: "vec3(0,1,2)", "myfunc(0,1,2)"
 
 	FUNCITON_CALL_PARAMETER_LIST : expression ...
 
-	ARRAY_REF_OP            : expression expression
+	ARRAY_REF_OP            : postfix_expression expression // a[b]
 
-	BREAK                   : (empty)
+	BREAK                   : (empty) // break;
 
-	SELECTION_STATEMENT     : expression statement
+	SELECTION_STATEMENT     : expression statement // if (a) b
 
-	SELECTION_STATEMENT_ELSE: expression statement statement
+	SELECTION_STATEMENT_ELSE: expression statement statement // if (a) b else c
 
-	WHILE_STATEMENT         : condition statement
+	WHILE_STATEMENT         : condition statement // while(a) b
 
-	DO_STATEMENT            : statement expression
+	DO_STATEMENT            : statement expression // do { a } while(b);
 
-	FOR_STATEMENT           : for_init_statement FOR_REST_STATEMENT
+	FOR_STATEMENT           : for_init_statement FOR_REST_STATEMENT statement // for (a; b) c
 
-	for_init_statement      : EXPRESSION_STATEMENT | DECLARATION
+	for_init_statement      : EXPRESSION_STATEMENT | DECLARATION // examples: "int r = 0", "r = 0"
 
-	FOR_REST_STATEMENT      : CONDITION_OPT [expression]
+	FOR_REST_STATEMENT      : CONDITION_OPT [expression] // examples: "r > 0; r++", ";r++", "r>0;", ";"
 
 	CONDITION_OPT           : [condition]
 
-	condition               :  EXPRESSION_CONDITION | ASSIGNMENT_CONDITION
+	condition               : EXPRESSION_CONDITION | ASSIGNMENT_CONDITION
 
 	EXPRESSION_CONDITION    : expression
 
 	ASSIGNMENT_CONDITION    : FULLY_SPECIFIED_TYPE IDENTIFIER INITIALIZER
 
-	RETURN                  : (none)
+	RETURN                  : (none) // return;
 
-	RETURN_VALUE            : expression
+	RETURN_VALUE            : expression // return a;
