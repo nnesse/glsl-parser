@@ -485,6 +485,7 @@ static const char *code_to_str[4096] = {
 	[INIT_DECLARATOR] = "INIT_DECLARATOR",
 	[INITIALIZER] = "INITIALIZER",
 	[TERNARY_EXPRESSION] = "TERNARY_EXPRESSION",
+	[FIELD_IDENTIFIER] = "FIELD_IDENTIFIER",
 	[NUM_GLSL_TOKEN] = ""
 };
 
@@ -651,9 +652,11 @@ static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int dept
 	int i;
 	int j;
 	switch(n->code) {
+	case FIELD_IDENTIFIER:
 	case IDENTIFIER:
-		if (n->data.str)
+		if (n->data.str) {
 			string_cat(out,"%s", n->data.str);
+		}
 		break;
 	case FLOATCONSTANT:
 		string_cat(out,"%f", n->data.f);

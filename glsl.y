@@ -101,6 +101,13 @@ static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context,
 	return n;
 }
 
+static struct glsl_node *new_glsl_string(struct glsl_parse_context *context, int code, const char *str)
+{
+	struct glsl_node *n = new_glsl_node(context, code, NULL);
+	n->data.str = glsl_parse_strdup(context, str);
+	return n;
+}
+
 #define scanner context->scanner //To allow the scanner to find it's context
 
 %}
@@ -210,7 +217,7 @@ static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context,
 %type <struct glsl_node *> type_name
 %type <struct glsl_node *> param_name
 %type <struct glsl_node *> function_name
-%type <struct glsl_node *> field_selection
+%type <struct glsl_node *> field_identifier
 %type <struct glsl_node *> type_specifier_identifier
 %type <struct glsl_node *> layout_identifier
 
@@ -488,6 +495,7 @@ static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context,
 %token INIT_DECLARATOR
 %token INITIALIZER
 %token TERNARY_EXPRESSION
+%token FIELD_IDENTIFIER
 
 %token NUM_GLSL_TOKEN
 
@@ -522,7 +530,7 @@ param_name		: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 function_name		: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
 			;
 
-field_selection		: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
+field_identifier	: IDENTIFIER { $$ = new_glsl_string(context, FIELD_IDENTIFIER, $1); }
 			;
 
 variable_identifier	: IDENTIFIER { $$ = new_glsl_identifier(context, $1); }
@@ -1044,10 +1052,10 @@ struct_declarator_list	: struct_declarator
 				{ $$ = new_glsl_node(context, STRUCT_DECLARATOR_LIST, $1, $3, NULL); }
 			;
 
-struct_declarator	: decl_identifier
+struct_declarator	: field_identifier
 				{ $$ = new_glsl_node(context, STRUCT_DECLARATOR, $1, NULL); }
 
-			| decl_identifier array_specifier_list
+			| field_identifier array_specifier_list
 				{ $$ = new_glsl_node(context, STRUCT_DECLARATOR, $1, $2, NULL); }
 			;
 
@@ -1267,7 +1275,7 @@ postfix_expression	: primary_expression { $$ = $1; }
 
 			| function_call { $$ = $1; }
 
-			| postfix_expression DOT field_selection
+			| postfix_expression DOT field_identifier
 				{ $$ = new_glsl_node(context, DOT, $1, $3, NULL);}
 
 			| postfix_expression INC_OP
