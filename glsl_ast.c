@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 
 static const char *token_to_str[4096] = {
 	[CONST] = "const",
@@ -554,44 +555,6 @@ void glsl_ast_print(struct glsl_node *n, int depth)
 
 	for (i = 0; i < n->child_count; i++) {
 		glsl_ast_print((struct glsl_node *)n->children[i], depth + 1);
-	}
-}
-
-void glsl_ast_walk_push_node(struct glsl_ast_walk_data *data, struct glsl_node *n)
-{
-	data->node_stack[data->node_stack_level] = n;
-	data->parent_stack[data->parent_stack_level] = n;
-	data->parent_stack_idx[data->parent_stack_level] = data->node_stack_level;
-	data->parent_stack_level++;
-	data->node_stack_level++;
-}
-
-void glsl_ast_walk_init(struct glsl_ast_walk_data *data)
-{
-	data->node_stack_level = 0;
-	data->parent_stack_level = 0;
-}
-
-void glsl_ast_walk(struct glsl_ast_walk_data *data, intptr_t state,
-		void (*enter_node)(struct glsl_ast_walk_data *data, struct glsl_node *n, intptr_t state),
-		void (*exit_node)(struct glsl_ast_walk_data *data, struct glsl_node *n, intptr_t state))
-{
-	while (1) {
-		struct glsl_node *n;
-
-		while (data->parent_stack_level && data->parent_stack_idx[data->parent_stack_level - 1] == data->node_stack_level) {
-			data->parent_stack_level--;
-			exit_node(data, data->parent_stack[data->parent_stack_level], state);
-		}
-
-		data->node_stack_level--;
-
-		if (data->node_stack_level < 0)
-			break;
-
-		n = data->node_stack[data->node_stack_level];
-
-		enter_node(data, n, state);
 	}
 }
 
