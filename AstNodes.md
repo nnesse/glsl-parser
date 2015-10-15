@@ -180,7 +180,7 @@ AST node types
 	TILDE                   : expression // ~a
 	BANG                    : expression // !a
 
-	POSTFIX_EXPRESSION      : expression
+	POSTFIX_EXPRESSION      : postfix_expression
 
 	postfix_expression      : POST_INC_OP | POST_DEC_OP | FUNCTION_CALL | ARRAY_REF_OP | DOT
 	                        | IDENTIFIER | INTCONSTANT | UINTCONSTANT | FLOATCONSTANT | TRUE
