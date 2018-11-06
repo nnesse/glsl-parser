@@ -478,6 +478,7 @@ static const char *code_to_str[4096] = {
 	[STRUCT_DECLARATOR_LIST] = "STRUCT_DECLARATOR_LIST",
 	[FUNCTION_CALL_PARAMETER_LIST] = "FUNCTION_CALL_PARAMETER_LIST",
 	[STRUCT_DECLARATION_LIST] = "STRUCT_DECLARATION_LIST",
+	[LAYOUT_QUALIFIER] = "LAYOUT_QUALIFIER",
 	[LAYOUT_QUALIFIER_ID] = "LAYOUT_QUALIFIER_ID",
 	[LAYOUT_QUALIFIER_ID_LIST] = "LAYOUT_QUALIFIER_ID_LIST",
 	[SUBROUTINE_TYPE] = "SUBROUTINE_TYPE",
@@ -905,12 +906,26 @@ static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int dept
 	case EXPRESSION_STATEMENT:
 		print_list_as_glsl(n, "", "", ";", out, depth);
 		break;
+	case LAYOUT_QUALIFIER:
+		string_cat(out, "layout");
+		for (unsigned int i = 0; i < n->child_count; i++)
+		{
+			_glsl_ast_gen_glsl(n->children[i], out, depth + 1);
+		}
+		break;
+	case LAYOUT_QUALIFIER_ID_LIST:
+		for (unsigned int i = 0; i < n->child_count; i++)
+		{
+			_glsl_ast_gen_glsl(n->children[i], out, depth + 1);
+			string_cat(out, ", ");
+		}
+		break;
 	case LAYOUT_QUALIFIER_ID:
-		string_cat(out, "layout (");
+		string_cat(out, " ( ");
 		_glsl_ast_gen_glsl(n->children[0], out, depth);
 		string_cat(out, " = ");
 		_glsl_ast_gen_glsl(n->children[1], out, depth);
-		string_cat(out, ")");
+		string_cat(out, " ) ");
 		break;
 
 	default:

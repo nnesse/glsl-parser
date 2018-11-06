@@ -448,6 +448,9 @@ static struct glsl_node *new_glsl_string(struct glsl_parse_context *context, int
 %token TYPE_NAME_LIST
 %token TYPE_SPECIFIER
 %token POSTFIX_EXPRESSION
+%token LAYOUT_QUALIFIER
+%token LAYOUT_QUALIFIER_ID
+%token LAYOUT_QUALIFIER_ID_LIST
 %token TYPE_QUALIFIER_LIST
 %token STRUCT_DECLARATION
 %token STRUCT_DECLARATOR
@@ -488,8 +491,6 @@ static struct glsl_node *new_glsl_string(struct glsl_parse_context *context, int
 %token STRUCT_DECLARATOR_LIST
 %token FUNCTION_CALL_PARAMETER_LIST
 %token STRUCT_DECLARATION_LIST
-%token LAYOUT_QUALIFIER_ID
-%token LAYOUT_QUALIFIER_ID_LIST
 %token SUBROUTINE_TYPE
 %token PAREN_EXPRESSION
 %token INIT_DECLARATOR
@@ -645,6 +646,14 @@ declaration		: function_prototype SEMICOLON { $$ = new_glsl_node(context, DECLAR
 							$3,
 							NULL),
 						NULL); }
+			| layout_qualifier init_declarator_list SEMICOLON
+				{ $$ = new_glsl_node(context, LAYOUT_QUALIFIER,
+						$1,
+						new_glsl_node(context, DECLARATION,
+							$2,
+							NULL),
+						NULL); }
+
 			;
 
 identifier_list		: COMMA decl_identifier { $$ = new_glsl_node(context, IDENTIFIER_LIST, $2, NULL); }
