@@ -12,12 +12,12 @@
 #include "glsl.parser.h" //For GLSL_STYPE and GLSL_LTYPE
 #include "glsl.lexer.h" //For glsl_lex()
 
-static void glsl_error(GLSL_LTYPE *loc, struct glsl_parse_context *c, const char *s);
+static void glsl_error(GLSL_LTYPE *loc, glsl_parse_context *c, const char *s);
 
 #define GLSL_STACK_BUFFER_SIZE (1024*1024)
 #define GLSL_STACK_BUFFER_PAYLOAD_SIZE (GLSL_STACK_BUFFER_SIZE - sizeof(intptr_t))
 
-uint8_t *glsl_parse_alloc(struct glsl_parse_context *context, size_t size, int align)
+uint8_t *glsl_parse_alloc(glsl_parse_context *context, size_t size, int align)
 {
 	uint8_t *ret;
 
@@ -46,7 +46,7 @@ uint8_t *glsl_parse_alloc(struct glsl_parse_context *context, size_t size, int a
 	return ret;
 }
 
-void glsl_parse_dealloc(struct glsl_parse_context *context)
+void glsl_parse_dealloc(glsl_parse_context *context)
 {
 	uint8_t *buffer = context->first_buffer;
 	while (buffer) {
@@ -56,7 +56,7 @@ void glsl_parse_dealloc(struct glsl_parse_context *context)
 	}
 }
 
-static char *glsl_parse_strdup(struct glsl_parse_context *context, const char *c)
+static char *glsl_parse_strdup(glsl_parse_context *context, const char *c)
 {
 	int len = strlen(c);
 	char *ret = (char *)glsl_parse_alloc(context, len + 1, 1);
@@ -64,36 +64,36 @@ static char *glsl_parse_strdup(struct glsl_parse_context *context, const char *c
 	return ret;
 }
 
-struct glsl_node *new_glsl_node(struct glsl_parse_context *context, int code, ...)
+glsl_node *new_glsl_node(glsl_parse_context *context, int code, ...)
 {
-	struct glsl_node *temp;
+	glsl_node *temp;
 	int i;
 	int n = 0;
 	va_list vl;
 	va_start(vl, code);
 	while (1) {
-		temp = va_arg(vl, struct glsl_node *);
+		temp = va_arg(vl, glsl_node *);
 		if (temp)
 			n++;
 		else
 			break;
 	}
 	va_end(vl);
-	struct glsl_node *g = (struct glsl_node *)glsl_parse_alloc(context, offsetof(struct glsl_node, children[n]), 8);
+	glsl_node *g = (glsl_node *)glsl_parse_alloc(context, offsetof(glsl_node, children[n]), 8);
 	g->code = code;
 	g->child_count = n;
 	va_start(vl, code);
 	for (i = 0; i < n; i++) {
-		temp = va_arg(vl, struct glsl_node *);
+		temp = va_arg(vl, glsl_node *);
 		g->children[i] = temp;
 	}
 	va_end(vl);
 	return g;
 }
 
-static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context, const char *str)
+static glsl_node *new_glsl_identifier(glsl_parse_context *context, const char *str)
 {
-	struct glsl_node *n = new_glsl_node(context, IDENTIFIER, NULL);
+	glsl_node *n = new_glsl_node(context, IDENTIFIER, NULL);
 	if (!str)
 		n->data.str = NULL;
 	else
@@ -101,9 +101,9 @@ static struct glsl_node *new_glsl_identifier(struct glsl_parse_context *context,
 	return n;
 }
 
-static struct glsl_node *new_glsl_string(struct glsl_parse_context *context, int code, const char *str)
+static glsl_node *new_glsl_string(glsl_parse_context *context, int code, const char *str)
 {
-	struct glsl_node *n = new_glsl_node(context, code, NULL);
+	glsl_node *n = new_glsl_node(context, code, NULL);
 	n->data.str = glsl_parse_strdup(context, str);
 	return n;
 }
@@ -119,107 +119,107 @@ static struct glsl_node *new_glsl_string(struct glsl_parse_context *context, int
 %define api.value.type union
 
 %pure-parser
-%parse-param { struct glsl_parse_context * context }
+%parse-param { glsl_parse_context * context }
 %lex-param { void * scanner }
 %locations
 
-%type <struct glsl_node *> translation_unit
+%type <glsl_node *> translation_unit
 
-%type <struct glsl_node *> external_declaration
-%type <struct glsl_node *> function_definition
-%type <struct glsl_node *> compound_statement_no_new_scope
-%type <struct glsl_node *> statement
-%type <struct glsl_node *> statement_list
-%type <struct glsl_node *> compound_statement
-%type <struct glsl_node *> simple_statement
-%type <struct glsl_node *> declaration
-%type <struct glsl_node *> identifier_list
-%type <struct glsl_node *> init_declarator_list
-%type <struct glsl_node *> single_declaration
-%type <struct glsl_node *> initializer
-%type <struct glsl_node *> initializer_list
+%type <glsl_node *> external_declaration
+%type <glsl_node *> function_definition
+%type <glsl_node *> compound_statement_no_new_scope
+%type <glsl_node *> statement
+%type <glsl_node *> statement_list
+%type <glsl_node *> compound_statement
+%type <glsl_node *> simple_statement
+%type <glsl_node *> declaration
+%type <glsl_node *> identifier_list
+%type <glsl_node *> init_declarator_list
+%type <glsl_node *> single_declaration
+%type <glsl_node *> initializer
+%type <glsl_node *> initializer_list
 
-%type <struct glsl_node *> expression_statement
-%type <struct glsl_node *> selection_statement
-%type <struct glsl_node *> switch_statement
-%type <struct glsl_node *> switch_statement_list
-%type <struct glsl_node *> case_label
-%type <struct glsl_node *> iteration_statement
-%type <struct glsl_node *> statement_no_new_scope
-%type <struct glsl_node *> for_init_statement
-%type <struct glsl_node *> conditionopt
+%type <glsl_node *> expression_statement
+%type <glsl_node *> selection_statement
+%type <glsl_node *> switch_statement
+%type <glsl_node *> switch_statement_list
+%type <glsl_node *> case_label
+%type <glsl_node *> iteration_statement
+%type <glsl_node *> statement_no_new_scope
+%type <glsl_node *> for_init_statement
+%type <glsl_node *> conditionopt
 
-%type <struct glsl_node *> condition
-%type <struct glsl_node *> for_rest_statement
-%type <struct glsl_node *> jump_statement
-%type <struct glsl_node *> function_prototype
-%type <struct glsl_node *> function_declarator
-%type <struct glsl_node *> parameter_declaration
-%type <struct glsl_node *> parameter_declarator
-%type <struct glsl_node *> function_header
-%type <struct glsl_node *> function_parameter_list
-%type <struct glsl_node *> fully_specified_type
-%type <struct glsl_node *> parameter_type_specifier
+%type <glsl_node *> condition
+%type <glsl_node *> for_rest_statement
+%type <glsl_node *> jump_statement
+%type <glsl_node *> function_prototype
+%type <glsl_node *> function_declarator
+%type <glsl_node *> parameter_declaration
+%type <glsl_node *> parameter_declarator
+%type <glsl_node *> function_header
+%type <glsl_node *> function_parameter_list
+%type <glsl_node *> fully_specified_type
+%type <glsl_node *> parameter_type_specifier
 
-%type <struct glsl_node *> primary_expression
-%type <struct glsl_node *> expression
-%type <struct glsl_node *> assignment_expression
-%type <struct glsl_node *> conditional_expression
-%type <struct glsl_node *> logical_or_expression
-%type <struct glsl_node *> logical_xor_expression
-%type <struct glsl_node *> logical_and_expression
-%type <struct glsl_node *> exclusive_or_expression
-%type <struct glsl_node *> constant_expression
-%type <struct glsl_node *> and_expression
-%type <struct glsl_node *> equality_expression
-%type <struct glsl_node *> relational_expression
-%type <struct glsl_node *> shift_expression
-%type <struct glsl_node *> additive_expression
-%type <struct glsl_node *> multiplicative_expression
-%type <struct glsl_node *> unary_expression
-%type <struct glsl_node *> postfix_expression
-%type <struct glsl_node *> integer_expression
-%type <struct glsl_node *> inclusive_or_expression
+%type <glsl_node *> primary_expression
+%type <glsl_node *> expression
+%type <glsl_node *> assignment_expression
+%type <glsl_node *> conditional_expression
+%type <glsl_node *> logical_or_expression
+%type <glsl_node *> logical_xor_expression
+%type <glsl_node *> logical_and_expression
+%type <glsl_node *> exclusive_or_expression
+%type <glsl_node *> constant_expression
+%type <glsl_node *> and_expression
+%type <glsl_node *> equality_expression
+%type <glsl_node *> relational_expression
+%type <glsl_node *> shift_expression
+%type <glsl_node *> additive_expression
+%type <glsl_node *> multiplicative_expression
+%type <glsl_node *> unary_expression
+%type <glsl_node *> postfix_expression
+%type <glsl_node *> integer_expression
+%type <glsl_node *> inclusive_or_expression
 
-%type <struct glsl_node *> function_call
-%type <struct glsl_node *> function_call_or_method
-%type <struct glsl_node *> function_call_generic
-%type <struct glsl_node *> function_call_parameter_list
-%type <struct glsl_node *> function_identifier
+%type <glsl_node *> function_call
+%type <glsl_node *> function_call_or_method
+%type <glsl_node *> function_call_generic
+%type <glsl_node *> function_call_parameter_list
+%type <glsl_node *> function_identifier
 
-%type <struct glsl_node *> type_specifier
-%type <struct glsl_node *> type_specifier_nonarray
-%type <struct glsl_node *> struct_specifier
-%type <struct glsl_node *> array_specifier
-%type <struct glsl_node *> array_specifier_list
+%type <glsl_node *> type_specifier
+%type <glsl_node *> type_specifier_nonarray
+%type <glsl_node *> struct_specifier
+%type <glsl_node *> array_specifier
+%type <glsl_node *> array_specifier_list
 
-%type <struct glsl_node *> struct_declaration_list
-%type <struct glsl_node *> struct_declaration
-%type <struct glsl_node *> struct_declarator_list
-%type <struct glsl_node *> struct_declarator
-%type <struct glsl_node *> type_qualifier
-%type <struct glsl_node *> single_type_qualifier
-%type <struct glsl_node *> layout_qualifier
-%type <struct glsl_node *> layout_qualifier_id_list
-%type <struct glsl_node *> layout_qualifier_id
+%type <glsl_node *> struct_declaration_list
+%type <glsl_node *> struct_declaration
+%type <glsl_node *> struct_declarator_list
+%type <glsl_node *> struct_declarator
+%type <glsl_node *> type_qualifier
+%type <glsl_node *> single_type_qualifier
+%type <glsl_node *> layout_qualifier
+%type <glsl_node *> layout_qualifier_id_list
+%type <glsl_node *> layout_qualifier_id
 
-%type <struct glsl_node *> precision_qualifier
-%type <struct glsl_node *> invariant_qualifier
-%type <struct glsl_node *> precise_qualifier
-%type <struct glsl_node *> storage_qualifier
-%type <struct glsl_node *> interpolation_qualifier
-%type <struct glsl_node *> type_name_list
+%type <glsl_node *> precision_qualifier
+%type <glsl_node *> invariant_qualifier
+%type <glsl_node *> precise_qualifier
+%type <glsl_node *> storage_qualifier
+%type <glsl_node *> interpolation_qualifier
+%type <glsl_node *> type_name_list
 
-%type <struct glsl_node *> variable_identifier
-%type <struct glsl_node *> decl_identifier
-%type <struct glsl_node *> block_identifier
-%type <struct glsl_node *> struct_name
-%type <struct glsl_node *> type_name
-%type <struct glsl_node *> param_name
-%type <struct glsl_node *> function_name
-%type <struct glsl_node *> field_identifier
-%type <struct glsl_node *> type_specifier_identifier
-%type <struct glsl_node *> layout_identifier
+%type <glsl_node *> variable_identifier
+%type <glsl_node *> decl_identifier
+%type <glsl_node *> block_identifier
+%type <glsl_node *> struct_name
+%type <glsl_node *> type_name
+%type <glsl_node *> param_name
+%type <glsl_node *> function_name
+%type <glsl_node *> field_identifier
+%type <glsl_node *> type_specifier_identifier
+%type <glsl_node *> layout_identifier
 
 %type <int> assignment_operator
 %type <int> unary_operator
@@ -1363,14 +1363,14 @@ primary_expression	: variable_identifier { $$ = $1; }
 //The scanner macro, needed for integration with flex, causes problems below
 #undef scanner
 
-static void glsl_error(GLSL_LTYPE *loc, struct glsl_parse_context *c, const char *s)
+static void glsl_error(GLSL_LTYPE *loc, glsl_parse_context *c, const char *s)
 {
 	c->error = true;
 	if (c->error_cb)
 		c->error_cb(s, loc->first_line, loc->first_column, loc->last_column);
 }
 
-int list_length(struct glsl_node *n, int list_token)
+int list_length(glsl_node *n, int list_token)
 {
 	if (n->code != list_token) {
 		return 1;
@@ -1384,11 +1384,11 @@ int list_length(struct glsl_node *n, int list_token)
 	}
 }
 
-static void list_gather(struct glsl_node *n, struct glsl_node *new_list, int list_token)
+static void list_gather(glsl_node *n, glsl_node *new_list, int list_token)
 {
 	int i;
 	for (i = 0; i < n->child_count; i++) {
-		struct glsl_node *child = n->children[i];
+		glsl_node *child = n->children[i];
 		if (child->code != list_token)
 			new_list->children[new_list->child_count++] = child;
 		else
@@ -1396,15 +1396,15 @@ static void list_gather(struct glsl_node *n, struct glsl_node *new_list, int lis
 	}
 }
 
-static void list_collapse(struct glsl_parse_context *context, struct glsl_node *n)
+static void list_collapse(glsl_parse_context *context, glsl_node *n)
 {
 	int i;
 	for (i = 0; i < n->child_count; i++) {
-		struct glsl_node *child = n->children[i];
+		glsl_node *child = n->children[i];
 		if (glsl_ast_is_list_node(child)) {
 			int list_token = child->code;
 			int length = list_length(child, list_token);
-			struct glsl_node *g = (struct glsl_node *)glsl_parse_alloc(context, offsetof(struct glsl_node, children[length]), 8);
+			glsl_node *g = (glsl_node *)glsl_parse_alloc(context, offsetof(glsl_node, children[length]), 8);
 			g->code = list_token;
 			g->child_count = 0;
 			list_gather(child, g, list_token);
@@ -1415,7 +1415,7 @@ static void list_collapse(struct glsl_parse_context *context, struct glsl_node *
 	}
 }
 
-static bool parse_internal(struct glsl_parse_context *context)
+static bool parse_internal(glsl_parse_context *context)
 {
 	context->error = false;
 	glsl_parse(context);
@@ -1428,7 +1428,7 @@ static bool parse_internal(struct glsl_parse_context *context)
 			//
 			int list_code = context->root->code;
 			int length = list_length(context->root, list_code);
-			struct glsl_node *new_root = (struct glsl_node *)glsl_parse_alloc(context, offsetof(struct glsl_node, children[length]), 8);
+			glsl_node *new_root = (glsl_node *)glsl_parse_alloc(context, offsetof(glsl_node, children[length]), 8);
 			new_root->code = TRANSLATION_UNIT;
 			new_root->child_count = 0;
 			list_gather(context->root, new_root, list_code);
@@ -1443,7 +1443,7 @@ static bool parse_internal(struct glsl_parse_context *context)
 	return context->error;
 }
 
-bool glsl_parse_file(struct glsl_parse_context *context, FILE *file)
+bool glsl_parse_file(glsl_parse_context *context, FILE *file)
 {
 	glsl_lex_init(&(context->scanner));
 
@@ -1458,7 +1458,7 @@ bool glsl_parse_file(struct glsl_parse_context *context, FILE *file)
 	return error;
 }
 
-bool glsl_parse_string(struct glsl_parse_context *context, const char *str)
+bool glsl_parse_string(glsl_parse_context *context, const char *str)
 {
 	char *text;
 	size_t sz;
@@ -1480,7 +1480,7 @@ bool glsl_parse_string(struct glsl_parse_context *context, const char *str)
 	return error;
 }
 
-void glsl_parse_context_init(struct glsl_parse_context *context)
+void glsl_parse_context_init(glsl_parse_context *context)
 {
 	context->root = NULL;
 	context->scanner = NULL;
@@ -1492,13 +1492,13 @@ void glsl_parse_context_init(struct glsl_parse_context *context)
 	context->error = false;
 }
 
-void glsl_parse_set_error_cb(struct glsl_parse_context *context, glsl_parse_error_cb_t error_cb)
+void glsl_parse_set_error_cb(glsl_parse_context *context, glsl_parse_error_cb_t error_cb)
 {
 	context->error_cb = error_cb;
 }
 
 
-void glsl_parse_context_destroy(struct glsl_parse_context *context)
+void glsl_parse_context_destroy(glsl_parse_context *context)
 {
 	glsl_parse_dealloc(context);
 }

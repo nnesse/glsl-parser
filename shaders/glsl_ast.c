@@ -488,7 +488,7 @@ static const char *code_to_str[4096] = {
 	[FIELD_IDENTIFIER] = "FIELD_IDENTIFIER",
 	[NUM_GLSL_TOKEN] = ""};
 
-bool glsl_ast_is_list_node(struct glsl_node *n)
+bool glsl_ast_is_list_node(glsl_node *n)
 {
 	switch (n->code)
 	{
@@ -510,7 +510,7 @@ bool glsl_ast_is_list_node(struct glsl_node *n)
 	}
 }
 
-void glsl_ast_print(struct glsl_node *n, int depth)
+void glsl_ast_print(glsl_node *n, int depth)
 {
 	int i;
 
@@ -557,11 +557,11 @@ void glsl_ast_print(struct glsl_node *n, int depth)
 
 	for (i = 0; i < n->child_count; i++)
 	{
-		glsl_ast_print((struct glsl_node *)n->children[i], depth + 1);
+		glsl_ast_print((glsl_node *)n->children[i], depth + 1);
 	}
 }
 
-static bool is_optional_list(struct glsl_node *n)
+static bool is_optional_list(glsl_node *n)
 {
 	switch (n->code)
 	{
@@ -579,7 +579,7 @@ struct string
 	int capacity;
 };
 
-static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int depth);
+static void _glsl_ast_gen_glsl(glsl_node *n, struct string *out, int depth);
 
 static void string_cat(struct string *str, const char *format, ...)
 {
@@ -604,7 +604,7 @@ static void string_cat(struct string *str, const char *format, ...)
 	str->len += n;
 }
 
-static void print_list_as_glsl(struct glsl_node *n, const char *prefix, const char *delim, const char *postfix, struct string *out, int depth)
+static void print_list_as_glsl(glsl_node *n, const char *prefix, const char *delim, const char *postfix, struct string *out, int depth)
 {
 	int i, c = 0;
 	string_cat(out, "%s", prefix);
@@ -620,7 +620,7 @@ static void print_list_as_glsl(struct glsl_node *n, const char *prefix, const ch
 	string_cat(out, "%s", postfix);
 }
 
-static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int depth)
+static void _glsl_ast_gen_glsl(glsl_node *n, struct string *out, int depth)
 {
 	int i;
 	int j;
@@ -922,7 +922,7 @@ static void _glsl_ast_gen_glsl(struct glsl_node *n, struct string *out, int dept
 	}
 }
 
-char *glsl_ast_generate_glsl(struct glsl_node *n)
+char *glsl_ast_generate_glsl(glsl_node *n)
 {
 	struct string s;
 	s.s = malloc(1024);

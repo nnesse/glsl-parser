@@ -10,7 +10,7 @@ void error_cb(const char *str, int lineno, int first_col, int last_col)
 	fprintf(stderr, "GLSL parse error line %d(%d-%d): %s\n", lineno, first_col, last_col, str);
 }
 
-void parse_file(struct glsl_parse_context *context, FILE *f)
+void parse_file(glsl_parse_context *context, FILE *f)
 {
 	bool error = glsl_parse_file(context, f);
 
@@ -27,7 +27,7 @@ void parse_file(struct glsl_parse_context *context, FILE *f)
 
 int main(int argc, char **argv, char **envp)
 {
-	struct glsl_parse_context context;
+	glsl_parse_context context;
 
 	glsl_parse_context_init(&context);
 

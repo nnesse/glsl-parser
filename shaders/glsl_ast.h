@@ -9,7 +9,7 @@
 // Returns true if the children of this node form
 // a list
 //
-bool glsl_ast_is_list_node(struct glsl_node *n);
+bool glsl_ast_is_list_node(glsl_node *n);
 
 //
 // glsl_ast_print()
@@ -18,7 +18,7 @@ bool glsl_ast_is_list_node(struct glsl_node *n);
 // The 'depth' parameter represents amount to indent the
 // the printed text.
 //
-void glsl_ast_print(struct glsl_node *n, int depth);
+void glsl_ast_print(glsl_node *n, int depth);
 
 //
 // glsl_ast_generate_glsl()
@@ -29,6 +29,6 @@ void glsl_ast_print(struct glsl_node *n, int depth);
 // the AST or NULL on error. The returned string must be
 // deallocataed with free()
 //
-char *glsl_ast_generate_glsl(struct glsl_node *n);
+char *glsl_ast_generate_glsl(glsl_node *n);
 
 #endif
